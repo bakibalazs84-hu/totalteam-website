@@ -1,13 +1,643 @@
 <!DOCTYPE html>
 <html lang="hu">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Total Team - Látványtervezés, díszlet, kellékek Budapestről" />
-    <title>Total Team</title>
-  </head>
-  <body>
-    <noscript>Kérjük engedélyezze a JavaScriptet.</noscript>
-    <div id="root"></div>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raktár — Total Team</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --white: #FFFFFF;
+    --bg: #F5F4F2;
+    --dark: #1C1C1C;
+    --mid: #6B6B6B;
+    --border: #E2E1DE;
+    --accent: #1C1C1C;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(245,244,242,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 40px; height: 64px;
+  }
+  .nav-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem; letter-spacing: 0.04em;
+    text-decoration: none; color: var(--dark);
+  }
+  .nav-right {
+    font-size: 0.78rem; color: var(--mid); letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 140px 40px 80px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    line-height: 1.05; font-weight: 400;
+    margin-bottom: 24px;
+  }
+  .hero h1 em { font-style: italic; }
+  .hero p {
+    font-size: 1rem; color: var(--mid); max-width: 520px;
+    line-height: 1.7; margin-bottom: 40px;
+  }
+  .hero-note {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 0.78rem; color: var(--mid); letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .hero-note::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: #4CAF50; display: inline-block;
+  }
+
+  /* SEARCH BAR */
+  .search-wrap {
+    max-width: 1200px; margin: 0 auto; padding: 0 40px 48px;
+  }
+  .search-bar {
+    display: flex; gap: 12px; align-items: center;
+  }
+  .search-input {
+    flex: 1; padding: 14px 20px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--white); font-family: 'Inter', sans-serif;
+    font-size: 0.9rem; color: var(--dark);
+    outline: none; transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--dark); }
+  .search-input::placeholder { color: #aaa; }
+
+  /* FILTERS */
+  .filters {
+    max-width: 1200px; margin: 0 auto; padding: 0 40px 48px;
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 8px 18px; border-radius: 100px;
+    border: 1px solid var(--border); background: var(--white);
+    font-family: 'Inter', sans-serif; font-size: 0.8rem;
+    color: var(--mid); cursor: pointer; transition: all 0.18s;
+    letter-spacing: 0.04em;
+  }
+  .filter-btn:hover { border-color: var(--dark); color: var(--dark); }
+  .filter-btn.active {
+    background: var(--dark); color: var(--white); border-color: var(--dark);
+  }
+
+  /* CATEGORY SECTIONS */
+  .categories {
+    max-width: 1200px; margin: 0 auto; padding: 0 40px 120px;
+  }
+  .category-section {
+    margin-bottom: 64px;
+  }
+  .category-section.hidden { display: none; }
+  .category-header {
+    display: flex; align-items: baseline; gap: 16px;
+    margin-bottom: 28px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .category-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem; font-weight: 400;
+  }
+  .category-count {
+    font-size: 0.78rem; color: var(--mid);
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+
+  /* PRODUCT GRID */
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .product-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+  }
+  .product-img {
+    width: 100%; aspect-ratio: 4/3;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+  }
+  .product-img img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.4s;
+  }
+  .product-card:hover .product-img img { transform: scale(1.04); }
+  .product-img-placeholder {
+    font-size: 2.5rem; opacity: 0.3;
+  }
+  .product-info {
+    padding: 16px;
+  }
+  .product-name {
+    font-size: 0.88rem; font-weight: 500;
+    color: var(--dark); margin-bottom: 6px;
+    line-height: 1.4;
+  }
+  .product-meta {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .product-tag {
+    font-size: 0.72rem; color: var(--mid);
+    background: var(--bg); padding: 3px 8px; border-radius: 4px;
+    letter-spacing: 0.03em;
+  }
+  .product-tag.qty {
+    background: #EEF2FF; color: #4B5EAA; font-weight: 500;
+  }
+
+  /* CONTACT STRIP */
+  .contact-strip {
+    background: var(--dark); color: var(--white);
+    padding: 80px 40px; text-align: center;
+  }
+  .contact-strip h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 400; margin-bottom: 16px;
+  }
+  .contact-strip p {
+    color: rgba(255,255,255,0.6); margin-bottom: 32px;
+    font-size: 0.95rem;
+  }
+  .contact-btn {
+    display: inline-block; padding: 14px 32px;
+    border: 1px solid rgba(255,255,255,0.3); border-radius: 8px;
+    color: var(--white); text-decoration: none;
+    font-size: 0.85rem; letter-spacing: 0.06em;
+    text-transform: uppercase; transition: all 0.2s;
+  }
+  .contact-btn:hover { background: var(--white); color: var(--dark); }
+
+  /* FOOTER */
+  footer {
+    background: var(--dark); color: rgba(255,255,255,0.4);
+    padding: 24px 40px; text-align: center;
+    font-size: 0.78rem; letter-spacing: 0.06em;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 16px;
+    max-width: 600px; width: 100%; overflow: hidden;
+    position: relative;
+  }
+  .modal-img {
+    width: 100%; aspect-ratio: 4/3;
+    background: var(--bg); overflow: hidden;
+  }
+  .modal-img img { width: 100%; height: 100%; object-fit: cover; }
+  .modal-body { padding: 28px; }
+  .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem; margin-bottom: 12px;
+  }
+  .modal-details { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .modal-detail {
+    font-size: 0.82rem; color: var(--mid);
+    background: var(--bg); padding: 6px 12px; border-radius: 6px;
+  }
+  .modal-cta {
+    display: inline-block; padding: 12px 28px;
+    background: var(--dark); color: var(--white);
+    border-radius: 8px; text-decoration: none;
+    font-size: 0.85rem; letter-spacing: 0.04em;
+  }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(0,0,0,0.5); color: white; border: none;
+    cursor: pointer; font-size: 1.1rem; display: flex;
+    align-items: center; justify-content: center;
+  }
+
+  /* FADE IN */
+  .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.5s, transform 0.5s; }
+  .fade-in.visible { opacity: 1; transform: none; }
+
+  @media (max-width: 600px) {
+    nav { padding: 0 20px; }
+    .hero, .search-wrap, .filters, .categories { padding-left: 20px; padding-right: 20px; }
+    .hero { padding-top: 100px; }
+    .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#">Total Team</a>
+  <span class="nav-right">Raktár &amp; Kellékek</span>
+</nav>
+
+<section class="hero">
+  <h1>Raktár &amp;<br><em>kellékek.</em></h1>
+  <p>Több ezer kellék, bútor és díszlet bérelhető film, reklám és videóklip produkciókhoz. Érdeklődjön készletről és árakról.</p>
+  <span class="hero-note">Folyamatosan frissülő készlet</span>
+</section>
+
+<div class="search-wrap">
+  <div class="search-bar">
+    <input type="text" class="search-input" id="searchInput" placeholder="Keresés a raktárban... (pl. fotel, lámpa, asztal)">
+  </div>
+</div>
+
+<div class="filters" id="filterBar">
+  <button class="filter-btn active" data-cat="all">Összes kategória</button>
+  <button class="filter-btn" data-cat="ASZTALOK">Asztalok</button>
+  <button class="filter-btn" data-cat="barasztal">Bárasztal</button>
+  <button class="filter-btn" data-cat="Biciklik">Biciklik</button>
+  <button class="filter-btn" data-cat="Faladak">Faládák</button>
+  <button class="filter-btn" data-cat="Fuggoeny">Függöny</button>
+  <button class="filter-btn" data-cat="Furdoszoba">Fürdőszoba</button>
+  <button class="filter-btn" data-cat="Haloszoba">Hálószoba</button>
+  <button class="filter-btn" data-cat="Keributor">Keribútorok</button>
+  <button class="filter-btn" data-cat="komodok">Komódok</button>
+  <button class="filter-btn" data-cat="LAMPAK">Lámpák</button>
+  <button class="filter-btn" data-cat="Napernyok">Napernyők</button>
+  <button class="filter-btn" data-cat="paravan">Paraván</button>
+  <button class="filter-btn" data-cat="polcok">Polcok</button>
+  <button class="filter-btn" data-cat="sporteszkoz">Sporteszköz</button>
+  <button class="filter-btn" data-cat="Szekek">Székek</button>
+  <button class="filter-btn" data-cat="szakriny">Szekrény</button>
+  <button class="filter-btn" data-cat="Szobrok">Szobrok</button>
+  <button class="filter-btn" data-cat="TV">TV állvány</button>
+  <button class="filter-btn" data-cat="Ulobutor">Ülőbútor</button>
+  <button class="filter-btn" data-cat="Vasszekreny">Vasszekrény</button>
+  <button class="filter-btn" data-cat="Viragok">Virágok</button>
+  <button class="filter-btn" data-cat="egyeb">Egyéb</button>
+</div>
+
+<div class="categories" id="categoriesContainer">
+
+  <!-- ASZTALOK -->
+  <div class="category-section fade-in" data-cat="ASZTALOK">
+    <div class="category-header">
+      <h2 class="category-title">Asztalok</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-ASZTALOK"></div>
+  </div>
+
+  <!-- BÁRASZTAL -->
+  <div class="category-section fade-in" data-cat="barasztal">
+    <div class="category-header">
+      <h2 class="category-title">Bárasztal / Könyöklő</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-barasztal"></div>
+  </div>
+
+  <!-- BICIKLIK -->
+  <div class="category-section fade-in" data-cat="Biciklik">
+    <div class="category-header">
+      <h2 class="category-title">Biciklik</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Biciklik"></div>
+  </div>
+
+  <!-- FALÁDÁK -->
+  <div class="category-section fade-in" data-cat="Faladak">
+    <div class="category-header">
+      <h2 class="category-title">Faládák</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Faladak"></div>
+  </div>
+
+  <!-- FÜGGÖNY -->
+  <div class="category-section fade-in" data-cat="Fuggoeny">
+    <div class="category-header">
+      <h2 class="category-title">Függöny</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Fuggoeny"></div>
+  </div>
+
+  <!-- FÜRDŐSZOBA -->
+  <div class="category-section fade-in" data-cat="Furdoszoba">
+    <div class="category-header">
+      <h2 class="category-title">Fürdőszoba</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Furdoszoba"></div>
+  </div>
+
+  <!-- HÁLÓSZOBA -->
+  <div class="category-section fade-in" data-cat="Haloszoba">
+    <div class="category-header">
+      <h2 class="category-title">Hálószoba</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Haloszoba"></div>
+  </div>
+
+  <!-- KERIBÚTOROK -->
+  <div class="category-section fade-in" data-cat="Keributor">
+    <div class="category-header">
+      <h2 class="category-title">Keribútorok</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Keributor"></div>
+  </div>
+
+  <!-- KOMÓDOK -->
+  <div class="category-section fade-in" data-cat="komodok">
+    <div class="category-header">
+      <h2 class="category-title">Komódok</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-komodok"></div>
+  </div>
+
+  <!-- LÁMPÁK -->
+  <div class="category-section fade-in" data-cat="LAMPAK">
+    <div class="category-header">
+      <h2 class="category-title">Lámpák</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-LAMPAK"></div>
+  </div>
+
+  <!-- NAPERNYŐK -->
+  <div class="category-section fade-in" data-cat="Napernyok">
+    <div class="category-header">
+      <h2 class="category-title">Napernyők</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Napernyok"></div>
+  </div>
+
+  <!-- PARAVÁN -->
+  <div class="category-section fade-in" data-cat="paravan">
+    <div class="category-header">
+      <h2 class="category-title">Paraván / Fésülködő</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-paravan"></div>
+  </div>
+
+  <!-- POLCOK -->
+  <div class="category-section fade-in" data-cat="polcok">
+    <div class="category-header">
+      <h2 class="category-title">Polcok</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-polcok"></div>
+  </div>
+
+  <!-- SPORTESZKÖZ -->
+  <div class="category-section fade-in" data-cat="sporteszkoz">
+    <div class="category-header">
+      <h2 class="category-title">Sporteszközök</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-sporteszkoz"></div>
+  </div>
+
+  <!-- SZÉKEK -->
+  <div class="category-section fade-in" data-cat="Szekek">
+    <div class="category-header">
+      <h2 class="category-title">Székek</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Szekek"></div>
+  </div>
+
+  <!-- SZEKRÉNY -->
+  <div class="category-section fade-in" data-cat="szakriny">
+    <div class="category-header">
+      <h2 class="category-title">Szekrények</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-szakriny"></div>
+  </div>
+
+  <!-- SZOBROK -->
+  <div class="category-section fade-in" data-cat="Szobrok">
+    <div class="category-header">
+      <h2 class="category-title">Szobrok</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Szobrok"></div>
+  </div>
+
+  <!-- TV ÁLLVÁNY -->
+  <div class="category-section fade-in" data-cat="TV">
+    <div class="category-header">
+      <h2 class="category-title">TV állvány</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-TV"></div>
+  </div>
+
+  <!-- ÜLŐBÚTOR -->
+  <div class="category-section fade-in" data-cat="Ulobutor">
+    <div class="category-header">
+      <h2 class="category-title">Ülőbútor / Fotel / Kanapé</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Ulobutor"></div>
+  </div>
+
+  <!-- VASSZEKRÉNY -->
+  <div class="category-section fade-in" data-cat="Vasszekreny">
+    <div class="category-header">
+      <h2 class="category-title">Vasszekrények</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Vasszekreny"></div>
+  </div>
+
+  <!-- VIRÁGOK -->
+  <div class="category-section fade-in" data-cat="Viragok">
+    <div class="category-header">
+      <h2 class="category-title">Virágok</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-Viragok"></div>
+  </div>
+
+  <!-- EGYÉB -->
+  <div class="category-section fade-in" data-cat="egyeb">
+    <div class="category-header">
+      <h2 class="category-title">Egyéb kellékek</h2>
+      <span class="category-count">— hamarosan feltöltve</span>
+    </div>
+    <div class="product-grid" id="grid-egyeb">
+      <!-- Fogasok, megálló tábla, zászlótalp, zongora, bőrönd, dummy, kréta tábla, neon, kereszt -->
+      <div class="product-card" onclick="openModal('Fogasok / Posztamens','','Fogasok és posztamensek különböző méretben és kivitelben','','')">
+        <div class="product-img"><span class="product-img-placeholder">🪝</span></div>
+        <div class="product-info">
+          <div class="product-name">Fogasok / Posztamens</div>
+          <div class="product-meta"><span class="product-tag">Egyéb</span></div>
+        </div>
+      </div>
+      <div class="product-card" onclick="openModal('Megálló tábla','','Különböző megálló táblák','','')">
+        <div class="product-img"><span class="product-img-placeholder">🪧</span></div>
+        <div class="product-info">
+          <div class="product-name">Megálló tábla</div>
+          <div class="product-meta"><span class="product-tag">Egyéb</span></div>
+        </div>
+      </div>
+      <div class="product-card" onclick="openModal('Zászlótalp','','Zászlótalpak','','')">
+        <div class="product-img"><span class="product-img-placeholder">🚩</span></div>
+        <div class="product-info">
+          <div class="product-name">Zászlótalp</div>
+          <div class="product-meta"><span class="product-tag">Egyéb</span></div>
+        </div>
+      </div>
+      <div class="product-card" onclick="openModal('Zongora','','Zongora','','')">
+        <div class="product-img"><span class="product-img-placeholder">🎹</span></div>
+        <div class="product-info">
+          <div class="product-name">Zongora</div>
+          <div class="product-meta"><span class="product-tag">Hangszer</span></div>
+        </div>
+      </div>
+      <div class="product-card" onclick="openModal('Kréta tábla','','Nagy kréta tábla','','')">
+        <div class="product-img"><span class="product-img-placeholder">🖊️</span></div>
+        <div class="product-info">
+          <div class="product-name">Kréta tábla</div>
+          <div class="product-meta"><span class="product-tag">Egyéb</span></div>
+        </div>
+      </div>
+      <div class="product-card" onclick="openModal('Neon felirat','','Neon TATTOO és egyéb neon feliratok','','')">
+        <div class="product-img"><span class="product-img-placeholder">✨</span></div>
+        <div class="product-info">
+          <div class="product-name">Neon felirat</div>
+          <div class="product-meta"><span class="product-tag">Dekor</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CONTACT -->
+<div class="contact-strip">
+  <h2>Érdeklődjön<br><em>készletről.</em></h2>
+  <p>Részletes árajánlatért és elérhetőségért vegye fel velünk a kapcsolatot.</p>
+  <a href="mailto:info@totalteam.hu" class="contact-btn">Kapcsolat felvétel</a>
+</div>
+
+<footer>© 2026 Total Team — Minden jog fenntartva</footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('modal').classList.remove('open')">✕</button>
+    <div class="modal-img" id="modalImg"></div>
+    <div class="modal-body">
+      <h3 class="modal-title" id="modalTitle"></h3>
+      <div class="modal-details" id="modalDetails"></div>
+      <a href="mailto:info@totalteam.hu" class="modal-cta">Érdeklődöm</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// FILTER
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const cat = btn.dataset.cat;
+    document.querySelectorAll('.category-section').forEach(sec => {
+      if (cat === 'all' || sec.dataset.cat === cat) {
+        sec.classList.remove('hidden');
+      } else {
+        sec.classList.add('hidden');
+      }
+    });
+  });
+});
+
+// SEARCH
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  if (!q) {
+    document.querySelectorAll('.category-section').forEach(s => s.classList.remove('hidden'));
+    document.querySelectorAll('.product-card').forEach(c => c.style.display = '');
+    return;
+  }
+  document.querySelectorAll('.category-section').forEach(sec => {
+    const cards = sec.querySelectorAll('.product-card');
+    let any = false;
+    cards.forEach(card => {
+      const name = card.querySelector('.product-name').textContent.toLowerCase();
+      if (name.includes(q)) { card.style.display = ''; any = true; }
+      else card.style.display = 'none';
+    });
+    sec.classList.toggle('hidden', !any);
+  });
+});
+
+// MODAL
+function openModal(title, imgSrc, desc, qty, size) {
+  document.getElementById('modalTitle').textContent = title;
+  const imgEl = document.getElementById('modalImg');
+  if (imgSrc) {
+    imgEl.innerHTML = `<img src="${imgSrc}" alt="${title}">`;
+  } else {
+    imgEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:4rem;opacity:0.3;">📦</div>`;
+  }
+  const details = document.getElementById('modalDetails');
+  details.innerHTML = '';
+  if (qty) details.innerHTML += `<span class="modal-detail">🔢 ${qty} db</span>`;
+  if (size) details.innerHTML += `<span class="modal-detail">📐 ${size}</span>`;
+  if (desc) details.innerHTML += `<span class="modal-detail">${desc}</span>`;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(e) {
+  if (e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+
+// FADE IN
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
 </html>
