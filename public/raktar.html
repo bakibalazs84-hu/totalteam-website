@@ -91,6 +91,7 @@ button { font-family: inherit; }
 .card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
 .card-img { aspect-ratio: 4/3; max-width: 100%; background: var(--bg); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
 .card-img img { width: 100%; height: 100%; object-fit: cover; }
+.card-img.fit img { object-fit: contain; padding: 6px; }
 .ph { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--fg-muted); font-size: 11px; text-align: center; padding: 8px; }
 .ph svg { opacity: .45; }
 .badge { position: absolute; top: 6px; left: 6px; font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; }
@@ -257,6 +258,8 @@ const FILTERS = [
   { key: 'keszlet', label: 'Készlet', opts: ['szabad','foglalt'] },
 ];
 const PAGE = 48;
+// Ezekben a kategóriákban a kártyakép nincs levágva: az egész termék látszik
+const FIT_CATS = ['Faládák'];
 let state = { cat: 'Minden', sub: null, cols: 3, list: false, q: '', f: {}, shown: PAGE };
 let favs = new Set();
 try { favs = new Set(JSON.parse(localStorage.getItem('tt_favs') || '[]')); } catch (e) {}
@@ -334,7 +337,7 @@ function imgHTML(p, size) {
 function cardHTML(p) {
   const n = p.imgs.length;
   return `<button class="card" data-id="${p.id}" type="button">
-    <div class="card-img">${imgHTML(p, 'thumb')}<span class="badge ${p.status}">${p.status === 'foglalt' ? 'Foglalt' : 'Szabad'}</span>${n > 1 ? `<span class="nimg">${n} kép</span>` : ''}</div>
+    <div class="card-img${FIT_CATS.includes(p.category) ? ' fit' : ''}">${imgHTML(p, 'thumb')}<span class="badge ${p.status}">${p.status === 'foglalt' ? 'Foglalt' : 'Szabad'}</span>${n > 1 ? `<span class="nimg">${n} kép</span>` : ''}</div>
     <div class="card-body">
       <div class="card-name">${esc(p.name)}</div>
       <div class="card-code">${p.code}${state.list ? ' · ' + esc(p.category) : ''}</div>
