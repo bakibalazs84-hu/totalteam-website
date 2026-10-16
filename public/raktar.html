@@ -146,6 +146,48 @@ button { font-family: inherit; }
 .rent-btn:disabled { background: var(--pill-bg); color: var(--fg-muted); cursor: not-allowed; }
 .rent-note { font-size: 12px; color: var(--fg-muted); }
 .rent-note code { user-select: all; background: var(--pill-bg); padding: 1px 5px; border-radius: 3px; }
+.rent-btn.in-list { background: var(--ok-bg); color: var(--ok); }
+
+/* Bérlési lista (gyűjtő): fejléc gomb + jobb oldali panel */
+.cart-btn { position: relative; display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.cart-btn.empty { background: var(--surface); color: var(--fg); border-color: var(--border); }
+.cart-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--on-accent); color: var(--accent); font-size: 11px; display: inline-flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+.cart-btn.empty .cart-count { background: var(--pill-bg); color: var(--fg-muted); }
+.cart-btn.bump { animation: bump .35s ease; }
+@keyframes bump { 50% { transform: scale(1.12); } }
+.badge.inlist { left: auto; right: 6px; background: var(--accent); color: var(--on-accent); }
+.cart-overlay { position: fixed; inset: 0; background: var(--overlay); z-index: 300; display: flex; justify-content: flex-end; }
+.cart-panel { background: var(--surface); width: min(440px, 100%); height: 100%; display: flex; flex-direction: column; box-shadow: var(--shadow-lg);
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.cart-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.cart-head h2 { font-family: var(--font-display); font-size: 20px; }
+.cart-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--fg-muted); width: 32px; height: 32px; }
+.cart-scroll { flex: 1; overflow-y: auto; padding: 12px 20px 20px; display: flex; flex-direction: column; gap: 16px; }
+.cart-empty { color: var(--fg-muted); text-align: center; padding: 40px 10px; }
+.cart-items { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.cart-item { display: flex; gap: 10px; align-items: center; border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; }
+.cart-thumb { width: 56px; height: 42px; flex-shrink: 0; border-radius: 4px; overflow: hidden; background: var(--bg); display: flex; align-items: center; justify-content: center; }
+.cart-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cart-thumb .ph { padding: 0; font-size: 0; }
+.cart-thumb .ph svg { width: 18px; height: 18px; }
+.cart-info { flex: 1; min-width: 0; }
+.cart-name { font-weight: 600; font-size: 13px; overflow-wrap: anywhere; }
+.cart-code { font-size: 11px; color: var(--fg-muted); }
+.cart-item .qty button { width: 28px; height: 30px; font-size: 15px; }
+.cart-item .qty output { width: 30px; font-size: 13px; }
+.cart-remove { background: none; border: none; color: var(--fg-muted); cursor: pointer; font-size: 15px; width: 28px; height: 30px; }
+.cart-remove:hover { color: var(--bad); }
+.cart-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cart-form label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--fg-muted); }
+.cart-form label.full { grid-column: 1 / -1; }
+.cart-form input, .cart-form textarea { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--fg); font: 13px var(--font-body); width: 100%; }
+.cart-form input:focus, .cart-form textarea:focus { outline: none; border-color: var(--accent); }
+.cart-form textarea { resize: vertical; min-height: 60px; }
+.cart-foot { border-top: 1px solid var(--border); padding: 14px 20px; display: flex; flex-direction: column; gap: 8px; }
+.cart-foot .rent-btn { flex: none; width: 100%; height: 42px; }
+.cart-sub { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--fg-muted); }
+.link-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px; padding: 0; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 18px; border-radius: 20px; font-size: 13px; z-index: 400; box-shadow: var(--shadow-lg); max-width: calc(100% - 32px); text-align: center; }
 
 @media (max-width: 760px) {
   .sidebar { display: none; }
@@ -155,6 +197,8 @@ button { font-family: inherit; }
   .grid.cols-3, .grid.cols-4 { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .modal-title { font-size: 18px; }
   .info-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .cart-label { display: none; }
+  .cart-form { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -177,6 +221,7 @@ button { font-family: inherit; }
         <button class="view-btn" data-cols="4" title="4 oszlop" type="button"><svg width="14" height="14" viewBox="0 0 20 20"><rect x="1" y="1" width="3" height="3"/><rect x="6" y="1" width="3" height="3"/><rect x="11" y="1" width="3" height="3"/><rect x="16" y="1" width="3" height="3"/><rect x="1" y="6" width="3" height="3"/><rect x="6" y="6" width="3" height="3"/><rect x="11" y="6" width="3" height="3"/><rect x="16" y="6" width="3" height="3"/><rect x="1" y="11" width="3" height="3"/><rect x="6" y="11" width="3" height="3"/><rect x="11" y="11" width="3" height="3"/><rect x="16" y="11" width="3" height="3"/></svg></button>
         <button class="view-btn list" data-cols="list" title="Lista" type="button"><svg width="14" height="14" viewBox="0 0 24 24" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
       </div>
+      <button class="cart-btn empty" id="cartBtn" type="button" aria-label="Bérlési lista megnyitása"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg><span class="cart-label">Bérlési lista</span><span class="cart-count" id="cartCount">0</span></button>
     </div>
   </div>
 </header>
@@ -222,9 +267,32 @@ button { font-family: inherit; }
       <div id="mTagsWrap"><div class="sec-title">Jellemzők</div><div class="tags" id="mTags"></div></div>
       <div class="action-row">
         <div class="qty"><button id="qMinus" type="button" aria-label="Kevesebb">−</button><output id="qNum">1</output><button id="qPlus" type="button" aria-label="Több">+</button></div>
-        <button class="rent-btn" id="rentBtn" type="button">Bérlési igény küldése</button>
+        <button class="rent-btn" id="rentBtn" type="button">Hozzáadás a bérlési listához</button>
       </div>
-      <p class="rent-note">Ha nem nyílik meg a levelező: <code>info@totalteam.hu</code></p>
+      <p class="rent-note">Gyűjtsd össze a tételeket, és a listából egyetlen igényként küldheted el.</p>
+    </div>
+  </div>
+</div>
+
+<div class="cart-overlay" id="cart" hidden role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+  <div class="cart-panel">
+    <div class="cart-head"><h2 id="cartTitle">Bérlési lista</h2><button class="cart-close" id="cartClose" type="button" aria-label="Bezárás">✕</button></div>
+    <div class="cart-scroll">
+      <div class="cart-empty" id="cartEmpty">Még nincs tétel a listán.<br>Nyiss meg egy terméket, és add hozzá.</div>
+      <ul class="cart-items" id="cartItems"></ul>
+      <form class="cart-form" id="cartForm" autocomplete="on">
+        <label>Név *<input name="nev" required autocomplete="name"></label>
+        <label>Telefon<input name="tel" type="tel" autocomplete="tel"></label>
+        <label class="full">Produkció / cég<input name="ceg" autocomplete="organization"></label>
+        <label>Felvétel napja<input name="tol" type="date"></label>
+        <label>Visszahozás napja<input name="ig" type="date"></label>
+        <label class="full">Megjegyzés<textarea name="megj" rows="3"></textarea></label>
+      </form>
+    </div>
+    <div class="cart-foot">
+      <div class="cart-sub"><span id="cartSum"></span><button class="link-btn" id="cartClear" type="button">Lista ürítése</button></div>
+      <button class="rent-btn" id="cartSend" type="button">Bérlési igény küldése</button>
+      <div class="cart-sub"><span>Ha nem nyílik meg a levelező: <code>info@totalteam.hu</code></span><button class="link-btn" id="cartCopy" type="button">Lista másolása</button></div>
     </div>
   </div>
 </div>
@@ -338,7 +406,7 @@ function imgHTML(p, size) {
 function cardHTML(p) {
   const n = p.imgs.length;
   return `<button class="card" data-id="${p.id}" type="button">
-    <div class="card-img${FIT_CATS.includes(p.category) ? ' fit' : ''}">${imgHTML(p, 'thumb')}<span class="badge ${p.status}">${p.status === 'foglalt' ? 'Foglalt' : 'Szabad'}</span>${n > 1 ? `<span class="nimg">${n} kép</span>` : ''}</div>
+    <div class="card-img${FIT_CATS.includes(p.category) ? ' fit' : ''}">${imgHTML(p, 'thumb')}<span class="badge ${p.status}">${p.status === 'foglalt' ? 'Foglalt' : 'Szabad'}</span>${cart[p.id] ? `<span class="badge inlist">✓ Listán: ${cart[p.id]}</span>` : ''}${n > 1 ? `<span class="nimg">${n} kép</span>` : ''}</div>
     <div class="card-body">
       <div class="card-name">${esc(p.name)}</div>
       <div class="card-code">${p.code}${state.list ? ' · ' + esc(p.category) : ''}</div>
@@ -365,7 +433,7 @@ document.getElementById('moreBtn').addEventListener('click', () => { state.shown
 let cur = null, qty = 1;
 function openModal(id) {
   const p = PRODUCTS.find(x => x.id === id); if (!p) return;
-  cur = p; qty = 1; document.getElementById('qNum').textContent = 1;
+  cur = p; qty = cart[p.id] || 1; document.getElementById('qNum').textContent = qty;
   const imgs = showable(p);
   const main = document.getElementById('mMain');
   const setMain = i => { main.innerHTML = imgTag(imgs[i], 'large', p.name, false); };
@@ -383,8 +451,7 @@ function openModal(id) {
   const tags = p.tags.filter(t => t !== p.sub);
   document.getElementById('mTagsWrap').hidden = !tags.length;
   document.getElementById('mTags').innerHTML = tags.map(t => `<span class="tag">${esc(t)}</span>`).join('');
-  const btn = document.getElementById('rentBtn');
-  btn.disabled = p.status === 'foglalt'; btn.textContent = btn.disabled ? 'Jelenleg foglalt' : 'Bérlési igény küldése';
+  updateRentBtn();
   document.getElementById('mFav').classList.toggle('active', favs.has(p.id));
   document.getElementById('modal').hidden = false;
   document.getElementById('modalBox').scrollTop = 0;
@@ -392,14 +459,110 @@ function openModal(id) {
 const closeModal = () => { document.getElementById('modal').hidden = true; };
 document.getElementById('modalClose').onclick = closeModal;
 document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
-document.getElementById('qMinus').onclick = () => { if (qty > 1) document.getElementById('qNum').textContent = --qty; };
-document.getElementById('qPlus').onclick = () => { if (cur && qty < cur.qty) document.getElementById('qNum').textContent = ++qty; };
-document.getElementById('rentBtn').onclick = () => {
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeCart(); } });
+document.getElementById('qMinus').onclick = () => { if (qty > 1) document.getElementById('qNum').textContent = --qty; updateRentBtn(); };
+document.getElementById('qPlus').onclick = () => { if (cur && qty < cur.qty) document.getElementById('qNum').textContent = ++qty; updateRentBtn(); };
+// ── Bérlési lista (gyűjtő): több tétel → egyetlen email
+let cart = {};
+try { cart = JSON.parse(localStorage.getItem('tt_cart') || '{}') || {}; } catch (e) { cart = {}; }
+const byId = id => PRODUCTS.find(x => x.id === id);
+Object.keys(cart).forEach(id => { if (!byId(id) || !(cart[id] > 0)) delete cart[id]; });
+const saveCart = () => { try { localStorage.setItem('tt_cart', JSON.stringify(cart)); } catch (e) {} };
+const cartIds = () => Object.keys(cart).filter(byId);
+let toastT;
+function toast(msg) {
+  let t = document.querySelector('.toast');
+  if (!t) { t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+  t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2200);
+}
+function updateRentBtn() {
   if (!cur) return;
-  const body = `Bérlési igény: ${cur.name} (${cur.code}), ${qty} db`;
-  location.href = `mailto:info@totalteam.hu?subject=${encodeURIComponent('Bérlési igény – ' + cur.name)}&body=${encodeURIComponent(body)}`;
+  const btn = document.getElementById('rentBtn');
+  btn.disabled = cur.status === 'foglalt';
+  btn.classList.toggle('in-list', !!cart[cur.id] && cart[cur.id] === qty);
+  btn.textContent = btn.disabled ? 'Jelenleg foglalt'
+    : !cart[cur.id] ? 'Hozzáadás a bérlési listához'
+    : cart[cur.id] === qty ? `✓ A listán (${qty} db) – lista megnyitása` : `Lista frissítése: ${qty} db`;
+}
+function updateCartBtn(bump) {
+  const ids = cartIds(), b = document.getElementById('cartBtn');
+  document.getElementById('cartCount').textContent = ids.length;
+  b.classList.toggle('empty', !ids.length);
+  if (bump) { b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
+}
+function renderCart() {
+  const ids = cartIds();
+  document.getElementById('cartEmpty').hidden = !!ids.length;
+  document.getElementById('cartForm').hidden = !ids.length;
+  document.querySelector('.cart-foot').hidden = !ids.length;
+  document.getElementById('cartItems').innerHTML = ids.map(id => {
+    const p = byId(id), src = showable(p)[0];
+    return `<li class="cart-item" data-id="${id}">
+      <div class="cart-thumb">${src ? imgTag(src, 'thumb', '', true) : `<div class="ph">${ICON}</div>`}</div>
+      <div class="cart-info"><div class="cart-name">${esc(p.name)}</div><div class="cart-code">${p.code}${p.dims ? ' · ' + esc(p.dims) + ' cm' : ''} · max. ${p.qty} db</div></div>
+      <div class="qty"><button type="button" data-a="-" aria-label="Kevesebb">−</button><output>${cart[id]}</output><button type="button" data-a="+" aria-label="Több">+</button></div>
+      <button class="cart-remove" type="button" data-a="x" aria-label="Törlés a listáról">✕</button></li>`;
+  }).join('');
+  const total = ids.reduce((s, id) => s + cart[id], 0);
+  document.getElementById('cartSum').textContent = `${ids.length} tétel, összesen ${total} db`;
+}
+function openCart() { renderCart(); document.getElementById('cart').hidden = false; }
+const closeCart = () => { document.getElementById('cart').hidden = true; };
+function cartChanged(bump) { saveCart(); updateCartBtn(bump); renderCart(); render(); updateRentBtn(); }
+
+document.getElementById('rentBtn').onclick = () => {
+  if (!cur || cur.status === 'foglalt') return;
+  if (cart[cur.id] === qty) { closeModal(); openCart(); return; }
+  const isNew = !cart[cur.id];
+  cart[cur.id] = qty; cartChanged(true);
+  toast(isNew ? `Hozzáadva: ${cur.name} (${qty} db)` : `Frissítve: ${cur.name} (${qty} db)`);
 };
+document.getElementById('cartBtn').onclick = openCart;
+document.getElementById('cartClose').onclick = closeCart;
+document.getElementById('cart').addEventListener('click', e => { if (e.target.id === 'cart') closeCart(); });
+document.getElementById('cartItems').addEventListener('click', e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return;
+  const id = b.closest('.cart-item').dataset.id, p = byId(id);
+  if (b.dataset.a === '+') { if (cart[id] < p.qty) cart[id]++; }
+  else if (b.dataset.a === '-') { if (cart[id] > 1) cart[id]--; }
+  else delete cart[id];
+  cartChanged(false);
+});
+document.getElementById('cartClear').onclick = () => { if (confirm('Biztosan üríted a bérlési listát?')) { cart = {}; cartChanged(false); } };
+
+// Űrlap mezők megjegyzése (név, telefon, cég) a következő alkalomra
+const form = document.getElementById('cartForm');
+try { const s = JSON.parse(localStorage.getItem('tt_contact') || '{}'); ['nev', 'tel', 'ceg'].forEach(k => { if (s[k]) form.elements[k].value = s[k]; }); } catch (e) {}
+form.addEventListener('input', () => { try { localStorage.setItem('tt_contact', JSON.stringify({ nev: form.elements.nev.value, tel: form.elements.tel.value, ceg: form.elements.ceg.value })); } catch (e) {} });
+
+const huDate = v => v ? v.replace(/-/g, '.') + '.' : '';
+function cartText() {
+  const f = form.elements, ids = cartIds();
+  const lines = ids.map((id, i) => { const p = byId(id); return `${i + 1}. ${p.code} – ${p.name}${p.dims ? ' (' + p.dims + ' cm)' : ''}: ${cart[id]} db`; });
+  const total = ids.reduce((s, id) => s + cart[id], 0);
+  return [
+    'Bérlési igény – Total Team Raktár', '',
+    `Név: ${f.nev.value.trim()}`,
+    f.tel.value.trim() ? `Telefon: ${f.tel.value.trim()}` : null,
+    f.ceg.value.trim() ? `Produkció / cég: ${f.ceg.value.trim()}` : null,
+    (f.tol.value || f.ig.value) ? `Időszak: ${huDate(f.tol.value) || '?'} – ${huDate(f.ig.value) || '?'}` : null,
+    '', `Tételek (${ids.length} tétel, ${total} db):`, ...lines,
+    f.megj.value.trim() ? '\nMegjegyzés:\n' + f.megj.value.trim() : null,
+  ].filter(x => x !== null).join('\n');
+}
+document.getElementById('cartSend').onclick = () => {
+  if (!cartIds().length) return;
+  if (!form.reportValidity()) return;
+  const f = form.elements;
+  if (f.tol.value && f.ig.value && f.ig.value < f.tol.value) { f.ig.setCustomValidity('A visszahozás nem lehet a felvétel előtt.'); form.reportValidity(); f.ig.setCustomValidity(''); return; }
+  const subj = `Bérlési igény – ${cartIds().length} tétel` + (f.ceg.value.trim() ? ` – ${f.ceg.value.trim()}` : '') + (f.tol.value ? ` – ${huDate(f.tol.value)}` : '');
+  location.href = `mailto:info@totalteam.hu?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(cartText())}`;
+};
+document.getElementById('cartCopy').onclick = async () => {
+  try { await navigator.clipboard.writeText(cartText()); toast('A lista a vágólapra került – beillesztheted egy emailbe.'); }
+  catch (e) { toast('Nem sikerült másolni – írj az info@totalteam.hu címre.'); }
+};
+updateCartBtn(false);
 document.getElementById('mFav').onclick = () => {
   if (!cur) return;
   favs.has(cur.id) ? favs.delete(cur.id) : favs.add(cur.id);
