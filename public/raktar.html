@@ -455,8 +455,22 @@ function openModal(id) {
   document.getElementById('mFav').classList.toggle('active', favs.has(p.id));
   document.getElementById('modal').hidden = false;
   document.getElementById('modalBox').scrollTop = 0;
+  // A címke QR-kódja ide mutat: raktar.html#LMP-012 – a cím megosztható
+  if (location.hash.slice(1) !== p.code) history.replaceState(null, '', '#' + p.code);
 }
-const closeModal = () => { document.getElementById('modal').hidden = true; };
+const closeModal = () => {
+  const m = document.getElementById('modal'); if (m.hidden) return;
+  m.hidden = true;
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+};
+// Közvetlen hivatkozás tételre: #KÓD (pl. a címke QR-kódjából)
+function openFromHash() {
+  const code = decodeURIComponent(location.hash.slice(1)).trim().toUpperCase();
+  if (!code) return;
+  const p = PRODUCTS.find(x => x.code.toUpperCase() === code || x.id.toUpperCase() === code.replace('-', ''));
+  if (p) openModal(p.id);
+}
+window.addEventListener('hashchange', openFromHash);
 document.getElementById('modalClose').onclick = closeModal;
 document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeCart(); } });
@@ -583,6 +597,7 @@ const _hdr = () => document.documentElement.style.setProperty('--hdr', document.
 _hdr(); window.addEventListener('resize', _hdr);
 renderFilters();
 render();
+openFromHash();
 </script>
 
 </body>
