@@ -52,7 +52,8 @@ async function sb(path, opts = {}) {
   if (!url || !key) throw Object.assign(new Error('A Supabase nincs beállítva (SUPABASE_URL / SUPABASE_SERVICE_KEY).'), { status: 500 });
   const r = await fetch(url.replace(/\/$/, '') + '/rest/v1/' + path, {
     ...opts,
-    headers: { apikey: key, Authorization: 'Bearer ' + key, 'Content-Type': 'application/json', Prefer: 'return=representation', ...(opts.headers || {}) },
+    // Régi service_role kulcs (JWT, "eyJ…") → Authorization fejléc is; új "sb_secret_…" kulcs → csak apikey
+    headers: { apikey: key, ...(key.startsWith('eyJ') ? { Authorization: 'Bearer ' + key } : {}), 'Content-Type': 'application/json', Prefer: 'return=representation', ...(opts.headers || {}) },
   });
   const text = await r.text();
   if (!r.ok) throw Object.assign(new Error('Adatbázis hiba: ' + text.slice(0, 300)), { status: 502 });
