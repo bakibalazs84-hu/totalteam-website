@@ -221,6 +221,7 @@ button { font-family: inherit; }
         <button class="view-btn" data-cols="4" title="4 oszlop" type="button"><svg width="14" height="14" viewBox="0 0 20 20"><rect x="1" y="1" width="3" height="3"/><rect x="6" y="1" width="3" height="3"/><rect x="11" y="1" width="3" height="3"/><rect x="16" y="1" width="3" height="3"/><rect x="1" y="6" width="3" height="3"/><rect x="6" y="6" width="3" height="3"/><rect x="11" y="6" width="3" height="3"/><rect x="16" y="6" width="3" height="3"/><rect x="1" y="11" width="3" height="3"/><rect x="6" y="11" width="3" height="3"/><rect x="11" y="11" width="3" height="3"/><rect x="16" y="11" width="3" height="3"/></svg></button>
         <button class="view-btn list" data-cols="list" title="Lista" type="button"><svg width="14" height="14" viewBox="0 0 24 24" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
       </div>
+      <a class="cart-btn admin-back" id="adminBack" href="/admin.html" hidden style="text-decoration:none">← Kiadás</a>
       <button class="cart-btn empty" id="cartBtn" type="button" aria-label="Bérlési lista megnyitása"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg><span class="cart-label">Bérlési lista</span><span class="cart-count" id="cartCount">0</span></button>
     </div>
   </div>
@@ -577,6 +578,8 @@ document.getElementById('cartCopy').onclick = async () => {
   catch (e) { toast('Nem sikerült másolni – írj az info@totalteam.hu címre.'); }
 };
 updateCartBtn(false);
+// Belépett admin (ugyanabban a böngészőfülben) → vissza a kiadás felületre
+try { if (sessionStorage.getItem('tt_admin')) document.getElementById('adminBack').hidden = false; } catch (e) {}
 document.getElementById('mFav').onclick = () => {
   if (!cur) return;
   favs.has(cur.id) ? favs.delete(cur.id) : favs.add(cur.id);
