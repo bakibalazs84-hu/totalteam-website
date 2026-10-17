@@ -1,643 +1,493 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="hu">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Raktár — Total Team</title>
+<meta charset="utf-8">
+<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Total Team – Díszlet és kellék</title>
+<meta name="description" content="Total Team – díszletezés, kellékek és egyedi gyártás filmekhez és reklámokhoz, 1993 óta. Saját műhely és bérelhető kellékraktár Budapesten.">
+<meta property="og:title" content="Total Team – Díszlet és kellék">
+<meta property="og:description" content="Díszletezés, kellékek és egyedi gyártás filmekhez és reklámokhoz, 1993 óta.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;500;600&display=swap">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Nyitóoldal: a raktár oldallal azonos arculat (Playfair + Inter, arany kiemelés) */
+:root {
+  --bg: #f6f6f3; --surface: #ffffff; --border: #e3e2dc; --fg: #1b1a17; --fg-muted: #7d7b73;
+  --accent: #a8823f; --accent-bg: #f7f0e3; --pill-bg: #edece7; --on-accent: #ffffff;
+  --ink: #141412; --ink-fg: #f0efea; --ink-muted: #a3a197;
+  --radius: 6px;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --pad: max(20px, env(safe-area-inset-left, 0px));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141412; --surface: #1d1c1a; --border: #2f2e2a; --fg: #f0efea; --fg-muted: #94928a;
+    --accent: #cfa968; --accent-bg: #2a2418; --pill-bg: #292824; --on-accent: #141412;
+    --ink: #0d0d0c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141412; --surface: #1d1c1a; --border: #2f2e2a; --fg: #f0efea; --fg-muted: #94928a;
+  --accent: #cfa968; --accent-bg: #2a2418; --pill-bg: #292824; --on-accent: #141412; --ink: #0d0d0c; color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6; overflow-x: hidden; }
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-left: var(--pad); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+h2.sec { font-family: var(--font-display); font-size: clamp(32px, 5vw, 52px); line-height: 1.05; margin: 10px 0 18px; text-wrap: balance; }
+.lead { color: var(--fg-muted); max-width: 620px; font-size: 16px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: var(--radius); font-weight: 600; font-size: 14px; text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: transform .15s, background .15s, border-color .15s; }
+.btn:hover { transform: translateY(-1px); }
+.btn.gold { background: var(--accent); color: var(--on-accent); }
+.btn.ghost { border-color: rgba(255,255,255,.45); color: #fff; }
+.btn.ghost:hover { border-color: #fff; }
+.btn.line { border-color: var(--border); color: var(--fg); background: var(--surface); }
+.btn.line:hover { border-color: var(--accent); }
 
-  :root {
-    --white: #FFFFFF;
-    --bg: #F5F4F2;
-    --dark: #1C1C1C;
-    --mid: #6B6B6B;
-    --border: #E2E1DE;
-    --accent: #1C1C1C;
-  }
+/* ── Fejléc */
+.top { position: fixed; inset: 0 0 auto 0; z-index: 50; transition: background .25s, border-color .25s; border-bottom: 1px solid transparent; padding-top: env(safe-area-inset-top, 0px); }
+.top.solid { background: var(--surface); border-color: var(--border); }
+.top-in { display: flex; align-items: center; gap: 24px; height: 64px; }
+.logo { font-family: var(--font-display); font-size: 21px; font-weight: 700; text-decoration: none; color: #fff; white-space: nowrap; }
+.top .logo img { height: 48px; width: auto; border-radius: 6px; }
+.top .lg-light { display: none; }
+.top.solid .lg-dark, .top.open .lg-dark { display: none; }
+.top.solid .lg-light, .top.open .lg-light { display: block; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .top .lg-light { display: none !important; } :root:not([data-theme="light"]) .top .lg-dark { display: block !important; } }
+.logo span { color: var(--accent); }
+.top.solid .logo { color: var(--fg); }
+.nav { display: flex; gap: 26px; margin-left: auto; }
+.nav a { text-decoration: none; font-size: 14px; font-weight: 500; color: rgba(255,255,255,.85); }
+.nav a:hover { color: #fff; }
+.top.solid .nav a { color: var(--fg-muted); }
+.top.solid .nav a:hover { color: var(--fg); }
+.top .btn { height: 38px; padding: 0 16px; font-size: 13px; }
+.menu-btn { display: none; margin-left: auto; background: none; border: none; color: #fff; width: 40px; height: 40px; cursor: pointer; }
+.top.solid .menu-btn { color: var(--fg); }
 
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--dark);
-    min-height: 100vh;
-  }
+/* ── Nyitókép */
+.hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; color: #fff; background: #1b1a17; overflow: hidden; }
+.hero-bg { position: absolute; inset: 0; }
+.hero-bg img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.4s ease; transform: scale(1.04); }
+.hero-bg img.on { opacity: 1; animation: drift 9s ease-out forwards; }
+@keyframes drift { to { transform: scale(1); } }
+.hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,9,.55) 0%, rgba(10,10,9,.15) 35%, rgba(10,10,9,.82) 100%); }
+.hero-in { position: relative; z-index: 1; padding-bottom: clamp(48px, 9vh, 96px); padding-top: 120px; width: 100%; }
+.hero h1 { font-family: var(--font-display); font-size: clamp(44px, 8.4vw, 112px); line-height: .98; letter-spacing: -.01em; max-width: 980px; text-wrap: balance; }
+.hero h1 em { color: var(--accent); font-style: italic; }
+.hero p { max-width: 560px; font-size: clamp(15px, 1.6vw, 18px); color: rgba(255,255,255,.82); margin: 22px 0 32px; }
+.hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero-meta { position: absolute; right: max(20px, env(safe-area-inset-right, 0px)); bottom: clamp(48px, 9vh, 96px); z-index: 1; text-align: right; font-size: 12px; color: rgba(255,255,255,.7); letter-spacing: .06em; }
+.hero-meta b { display: block; font-family: var(--font-display); font-size: 18px; color: #fff; letter-spacing: 0; }
 
-  /* NAV */
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    background: rgba(245,244,242,0.92);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 40px; height: 64px;
-  }
-  .nav-logo {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.2rem; letter-spacing: 0.04em;
-    text-decoration: none; color: var(--dark);
-  }
-  .nav-right {
-    font-size: 0.78rem; color: var(--mid); letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
+/* ── Számok */
+.stats { background: var(--surface); border-bottom: 1px solid var(--border); }
+.stats-in { display: grid; grid-template-columns: repeat(4, 1fr); }
+.stat { padding: 28px 20px; border-left: 1px solid var(--border); }
+.stat:first-child { border-left: none; padding-left: 0; }
+.stat b { display: block; font-family: var(--font-display); font-size: clamp(30px, 4vw, 44px); line-height: 1; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--fg-muted); }
 
-  /* HERO */
-  .hero {
-    padding: 140px 40px 80px;
-    max-width: 1200px; margin: 0 auto;
-  }
-  .hero h1 {
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(2.5rem, 6vw, 5rem);
-    line-height: 1.05; font-weight: 400;
-    margin-bottom: 24px;
-  }
-  .hero h1 em { font-style: italic; }
-  .hero p {
-    font-size: 1rem; color: var(--mid); max-width: 520px;
-    line-height: 1.7; margin-bottom: 40px;
-  }
-  .hero-note {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-size: 0.78rem; color: var(--mid); letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .hero-note::before {
-    content: ''; width: 6px; height: 6px; border-radius: 50%;
-    background: #4CAF50; display: inline-block;
-  }
+section { padding: clamp(64px, 10vw, 120px) 0; }
 
-  /* SEARCH BAR */
-  .search-wrap {
-    max-width: 1200px; margin: 0 auto; padding: 0 40px 48px;
-  }
-  .search-bar {
-    display: flex; gap: 12px; align-items: center;
-  }
-  .search-input {
-    flex: 1; padding: 14px 20px;
-    border: 1px solid var(--border); border-radius: 8px;
-    background: var(--white); font-family: 'Inter', sans-serif;
-    font-size: 0.9rem; color: var(--dark);
-    outline: none; transition: border-color 0.2s;
-  }
-  .search-input:focus { border-color: var(--dark); }
-  .search-input::placeholder { color: #aaa; }
+/* ── Szolgáltatások */
+.svc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-top: 40px; }
+.svc { background: var(--surface); padding: 28px 24px 30px; display: flex; flex-direction: column; gap: 10px; }
+.svc .n { font-family: var(--font-display); color: var(--accent); font-size: 15px; }
+.svc h3 { font-family: var(--font-display); font-size: 22px; line-height: 1.15; }
+.svc p { color: var(--fg-muted); font-size: 14px; }
+.svc a { margin-top: auto; padding-top: 8px; font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
 
-  /* FILTERS */
-  .filters {
-    max-width: 1200px; margin: 0 auto; padding: 0 40px 48px;
-    display: flex; gap: 10px; flex-wrap: wrap;
-  }
-  .filter-btn {
-    padding: 8px 18px; border-radius: 100px;
-    border: 1px solid var(--border); background: var(--white);
-    font-family: 'Inter', sans-serif; font-size: 0.8rem;
-    color: var(--mid); cursor: pointer; transition: all 0.18s;
-    letter-spacing: 0.04em;
-  }
-  .filter-btn:hover { border-color: var(--dark); color: var(--dark); }
-  .filter-btn.active {
-    background: var(--dark); color: var(--white); border-color: var(--dark);
-  }
+/* ── Referenciák */
+.works { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.works-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.featured { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 40px 0 48px; }
+.feat { position: relative; aspect-ratio: 3/4; border-radius: 8px; overflow: hidden; background: var(--pill-bg); }
+.feat img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
+.feat:hover img { transform: scale(1.05); }
+.feat::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(0,0,0,.78)); }
+.feat figcaption { position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 1; color: #fff; }
+.feat figcaption b { display: block; font-family: var(--font-display); font-size: 20px; line-height: 1.15; }
+.feat figcaption span { font-size: 12px; color: rgba(255,255,255,.75); }
+.tabs { display: inline-flex; gap: 4px; background: var(--pill-bg); padding: 3px; border-radius: 20px; }
+.tabs button { border: none; background: none; padding: 7px 16px; border-radius: 17px; font: 500 13px var(--font-body); color: var(--fg-muted); cursor: pointer; }
+.tabs button.on { background: var(--surface); color: var(--fg); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.reflist { list-style: none; border-top: 1px solid var(--border); }
+.ref { display: grid; grid-template-columns: 70px minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.2fr); gap: 18px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.ref .y { font-variant-numeric: tabular-nums; color: var(--fg-muted); font-size: 13px; }
+.ref .t { font-family: var(--font-display); font-size: 19px; line-height: 1.2; }
+.ref .d, .ref .p { font-size: 13px; color: var(--fg-muted); }
+.ref-more { margin-top: 18px; }
 
-  /* CATEGORY SECTIONS */
-  .categories {
-    max-width: 1200px; margin: 0 auto; padding: 0 40px 120px;
-  }
-  .category-section {
-    margin-bottom: 64px;
-  }
-  .category-section.hidden { display: none; }
-  .category-header {
-    display: flex; align-items: baseline; gap: 16px;
-    margin-bottom: 28px; padding-bottom: 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  .category-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.6rem; font-weight: 400;
-  }
-  .category-count {
-    font-size: 0.78rem; color: var(--mid);
-    letter-spacing: 0.06em; text-transform: uppercase;
-  }
+/* ── Galéria */
+.gal { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: 150px; gap: 8px; margin-top: 40px; }
+.gal a { position: relative; border-radius: 6px; overflow: hidden; background: var(--pill-bg); }
+.gal a:nth-child(1) { grid-column: span 3; grid-row: span 2; }
+.gal a:nth-child(2), .gal a:nth-child(7) { grid-column: span 3; }
+.gal a:nth-child(n+3) { grid-column: span 2; }
+.gal a:nth-child(2) { grid-column: span 3; }
+.gal img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s, filter .3s; }
+.gal a:hover img { transform: scale(1.04); }
+.lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(10,10,9,.92); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.lightbox img { max-height: 88vh; max-width: 100%; border-radius: 6px; }
+.lightbox button { position: absolute; background: rgba(255,255,255,.12); color: #fff; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+.lb-x { top: max(16px, env(safe-area-inset-top, 0px)); right: 16px; }
+.lb-p { left: 12px; top: 50%; } .lb-n { right: 12px; top: 50%; }
 
-  /* PRODUCT GRID */
-  .product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
-  }
-  .product-card {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 12px; overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-    cursor: pointer;
-  }
-  .product-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
-  }
-  .product-img {
-    width: 100%; aspect-ratio: 4/3;
-    background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden; position: relative;
-  }
-  .product-img img {
-    width: 100%; height: 100%; object-fit: cover;
-    transition: transform 0.4s;
-  }
-  .product-card:hover .product-img img { transform: scale(1.04); }
-  .product-img-placeholder {
-    font-size: 2.5rem; opacity: 0.3;
-  }
-  .product-info {
-    padding: 16px;
-  }
-  .product-name {
-    font-size: 0.88rem; font-weight: 500;
-    color: var(--dark); margin-bottom: 6px;
-    line-height: 1.4;
-  }
-  .product-meta {
-    display: flex; gap: 8px; flex-wrap: wrap;
-  }
-  .product-tag {
-    font-size: 0.72rem; color: var(--mid);
-    background: var(--bg); padding: 3px 8px; border-radius: 4px;
-    letter-spacing: 0.03em;
-  }
-  .product-tag.qty {
-    background: #EEF2FF; color: #4B5EAA; font-weight: 500;
-  }
+/* ── Raktár ajánló */
+.store { background: var(--ink); color: var(--ink-fg); }
+.store-in { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: clamp(32px, 6vw, 80px); align-items: center; }
+.store h2.sec { color: #fff; }
+.store .lead { color: var(--ink-muted); }
+.store ul { list-style: none; margin: 26px 0 32px; display: flex; flex-direction: column; gap: 10px; }
+.store li { display: flex; gap: 10px; color: var(--ink-fg); font-size: 15px; }
+.store li::before { content: '—'; color: var(--accent); }
+.store-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sitem { display: block; text-decoration: none; background: #1d1c1a; border-radius: 6px; overflow: hidden; color: var(--ink-fg); }
+.sitem .im { aspect-ratio: 1; background: #262521; overflow: hidden; }
+.sitem img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+.sitem:hover img { transform: scale(1.05); }
+.sitem div.tx { padding: 8px 10px 10px; font-size: 12px; line-height: 1.3; }
+.sitem div.tx small { display: block; color: var(--ink-muted); font-size: 11px; margin-top: 2px; }
+.cats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.cats a { font-size: 12px; padding: 4px 11px; border: 1px solid #36352f; border-radius: 20px; text-decoration: none; color: var(--ink-muted); }
+.cats a:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* CONTACT STRIP */
-  .contact-strip {
-    background: var(--dark); color: var(--white);
-    padding: 80px 40px; text-align: center;
-  }
-  .contact-strip h2 {
-    font-family: 'DM Serif Display', serif;
-    font-size: clamp(1.8rem, 4vw, 3rem);
-    font-weight: 400; margin-bottom: 16px;
-  }
-  .contact-strip p {
-    color: rgba(255,255,255,0.6); margin-bottom: 32px;
-    font-size: 0.95rem;
-  }
-  .contact-btn {
-    display: inline-block; padding: 14px 32px;
-    border: 1px solid rgba(255,255,255,0.3); border-radius: 8px;
-    color: var(--white); text-decoration: none;
-    font-size: 0.85rem; letter-spacing: 0.06em;
-    text-transform: uppercase; transition: all 0.2s;
-  }
-  .contact-btn:hover { background: var(--white); color: var(--dark); }
+/* ── Rólunk */
+.about-in { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 80px); align-items: start; }
+.about blockquote { font-family: var(--font-display); font-size: clamp(22px, 2.6vw, 30px); line-height: 1.3; border-left: 3px solid var(--accent); padding-left: 20px; margin-top: 8px; }
+.about blockquote cite { display: block; font-family: var(--font-body); font-style: normal; font-size: 13px; color: var(--fg-muted); margin-top: 12px; }
+.about p + p { margin-top: 14px; }
+.about .txt p { color: var(--fg-muted); }
+.about .txt p:first-child { color: var(--fg); font-size: 17px; }
 
-  /* FOOTER */
-  footer {
-    background: var(--dark); color: rgba(255,255,255,0.4);
-    padding: 24px 40px; text-align: center;
-    font-size: 0.78rem; letter-spacing: 0.06em;
-    border-top: 1px solid rgba(255,255,255,0.08);
-  }
+/* ── Kapcsolat */
+.contact { background: var(--surface); border-top: 1px solid var(--border); }
+.c-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
+.c-card { border: 1px solid var(--border); border-radius: 10px; padding: 24px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; transition: border-color .2s; }
+a.c-card:hover { border-color: var(--accent); }
+.c-card small { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-muted); font-weight: 600; }
+.c-card b { font-family: var(--font-display); font-size: 22px; font-weight: 700; overflow-wrap: anywhere; }
+.c-card span { font-size: 13px; color: var(--fg-muted); }
 
-  /* MODAL */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-    align-items: center; justify-content: center; padding: 20px;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--white); border-radius: 16px;
-    max-width: 600px; width: 100%; overflow: hidden;
-    position: relative;
-  }
-  .modal-img {
-    width: 100%; aspect-ratio: 4/3;
-    background: var(--bg); overflow: hidden;
-  }
-  .modal-img img { width: 100%; height: 100%; object-fit: cover; }
-  .modal-body { padding: 28px; }
-  .modal-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.5rem; margin-bottom: 12px;
-  }
-  .modal-details { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-  .modal-detail {
-    font-size: 0.82rem; color: var(--mid);
-    background: var(--bg); padding: 6px 12px; border-radius: 6px;
-  }
-  .modal-cta {
-    display: inline-block; padding: 12px 28px;
-    background: var(--dark); color: var(--white);
-    border-radius: 8px; text-decoration: none;
-    font-size: 0.85rem; letter-spacing: 0.04em;
-  }
-  .modal-close {
-    position: absolute; top: 16px; right: 16px;
-    width: 36px; height: 36px; border-radius: 50%;
-    background: rgba(0,0,0,0.5); color: white; border: none;
-    cursor: pointer; font-size: 1.1rem; display: flex;
-    align-items: center; justify-content: center;
-  }
+footer { background: var(--ink); color: var(--ink-muted); font-size: 13px; padding: 28px 0 calc(28px + env(safe-area-inset-bottom, 0px)); }
+.f-in { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; }
+footer .logo { color: #fff; font-size: 18px; }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
+footer a { text-decoration: none; }
+footer a:hover { color: #fff; }
 
-  /* FADE IN */
-  .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.5s, transform 0.5s; }
-  .fade-in.visible { opacity: 1; transform: none; }
+.rv { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+.rv.in { opacity: 1; transform: none; }
 
-  @media (max-width: 600px) {
-    nav { padding: 0 20px; }
-    .hero, .search-wrap, .filters, .categories { padding-left: 20px; padding-right: 20px; }
-    .hero { padding-top: 100px; }
-    .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  }
+@media (max-width: 960px) {
+  .svc-grid { grid-template-columns: repeat(2, 1fr); }
+  .featured { grid-template-columns: repeat(2, 1fr); }
+  .store-in, .about-in { grid-template-columns: minmax(0, 1fr); }
+  .ref { grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr); }
+  .ref .p { display: none; }
+}
+@media (max-width: 760px) {
+  .nav, .top .btn { display: none; }
+  .menu-btn { display: block; }
+  .top.open { background: var(--surface); border-color: var(--border); }
+  .top.open .logo, .top.open .menu-btn { color: var(--fg); }
+  .top.open .nav { display: flex; flex-direction: column; gap: 0; position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px var(--pad) 16px; }
+  .top.open .nav a { color: var(--fg); padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 16px; }
+  .hero-meta { display: none; }
+  .stats-in { grid-template-columns: repeat(2, 1fr); }
+  .stat { padding: 20px 16px; border-left: none; border-top: 1px solid var(--border); }
+  .stat:nth-child(-n+2) { border-top: none; }
+  .stat:nth-child(odd) { padding-left: 0; border-right: 1px solid var(--border); }
+  .svc-grid { grid-template-columns: minmax(0, 1fr); }
+  .ref { grid-template-columns: 48px minmax(0, 1fr); gap: 4px 12px; }
+  .ref .d { grid-column: 2; }
+  .gal { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 130px; }
+  .gal a:nth-child(n) { grid-column: span 1; grid-row: span 1; }
+  .gal a:nth-child(1) { grid-column: span 2; grid-row: span 2; }
+  .store-grid { grid-template-columns: repeat(2, 1fr); }
+  .c-grid { grid-template-columns: minmax(0, 1fr); }
+}
 </style>
 </head>
 <body>
 
-<nav>
-  <a class="nav-logo" href="#">Total Team</a>
-  <span class="nav-right">Raktár &amp; Kellékek</span>
-</nav>
-
-<section class="hero">
-  <h1>Raktár &amp;<br><em>kellékek.</em></h1>
-  <p>Több ezer kellék, bútor és díszlet bérelhető film, reklám és videóklip produkciókhoz. Érdeklődjön készletről és árakról.</p>
-  <span class="hero-note">Folyamatosan frissülő készlet</span>
-</section>
-
-<div class="search-wrap">
-  <div class="search-bar">
-    <input type="text" class="search-input" id="searchInput" placeholder="Keresés a raktárban... (pl. fotel, lámpa, asztal)">
+<header class="top" id="top">
+  <div class="wrap top-in">
+    <a class="logo" href="#"><img class="lg-dark" src="/img/total-team-logo.jpg" alt="Total Team – Set decoration and prop art" width="54" height="50"><img class="lg-light" src="/img/total-team-logo-light.jpg" alt="" width="54" height="50"></a>
+    <nav class="nav" id="nav">
+      <a href="#szolgaltatasok">Szolgáltatások</a>
+      <a href="#munkaink">Munkáink</a>
+      <a href="#raktar">Kellékraktár</a>
+      <a href="#rolunk">Rólunk</a>
+      <a href="#kapcsolat">Kapcsolat</a>
+    </nav>
+    <a class="btn gold" href="/raktar.html">Raktár böngészése</a>
+    <button class="menu-btn" id="menuBtn" type="button" aria-label="Menü" aria-expanded="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </div>
-</div>
+</header>
 
-<div class="filters" id="filterBar">
-  <button class="filter-btn active" data-cat="all">Összes kategória</button>
-  <button class="filter-btn" data-cat="ASZTALOK">Asztalok</button>
-  <button class="filter-btn" data-cat="barasztal">Bárasztal</button>
-  <button class="filter-btn" data-cat="Biciklik">Biciklik</button>
-  <button class="filter-btn" data-cat="Faladak">Faládák</button>
-  <button class="filter-btn" data-cat="Fuggoeny">Függöny</button>
-  <button class="filter-btn" data-cat="Furdoszoba">Fürdőszoba</button>
-  <button class="filter-btn" data-cat="Haloszoba">Hálószoba</button>
-  <button class="filter-btn" data-cat="Keributor">Keribútorok</button>
-  <button class="filter-btn" data-cat="komodok">Komódok</button>
-  <button class="filter-btn" data-cat="LAMPAK">Lámpák</button>
-  <button class="filter-btn" data-cat="Napernyok">Napernyők</button>
-  <button class="filter-btn" data-cat="paravan">Paraván</button>
-  <button class="filter-btn" data-cat="polcok">Polcok</button>
-  <button class="filter-btn" data-cat="sporteszkoz">Sporteszköz</button>
-  <button class="filter-btn" data-cat="Szekek">Székek</button>
-  <button class="filter-btn" data-cat="szakriny">Szekrény</button>
-  <button class="filter-btn" data-cat="Szobrok">Szobrok</button>
-  <button class="filter-btn" data-cat="TV">TV állvány</button>
-  <button class="filter-btn" data-cat="Ulobutor">Ülőbútor</button>
-  <button class="filter-btn" data-cat="Vasszekreny">Vasszekrény</button>
-  <button class="filter-btn" data-cat="Viragok">Virágok</button>
-  <button class="filter-btn" data-cat="egyeb">Egyéb</button>
-</div>
-
-<div class="categories" id="categoriesContainer">
-
-  <!-- ASZTALOK -->
-  <div class="category-section fade-in" data-cat="ASZTALOK">
-    <div class="category-header">
-      <h2 class="category-title">Asztalok</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-ASZTALOK"></div>
-  </div>
-
-  <!-- BÁRASZTAL -->
-  <div class="category-section fade-in" data-cat="barasztal">
-    <div class="category-header">
-      <h2 class="category-title">Bárasztal / Könyöklő</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-barasztal"></div>
-  </div>
-
-  <!-- BICIKLIK -->
-  <div class="category-section fade-in" data-cat="Biciklik">
-    <div class="category-header">
-      <h2 class="category-title">Biciklik</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Biciklik"></div>
-  </div>
-
-  <!-- FALÁDÁK -->
-  <div class="category-section fade-in" data-cat="Faladak">
-    <div class="category-header">
-      <h2 class="category-title">Faládák</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Faladak"></div>
-  </div>
-
-  <!-- FÜGGÖNY -->
-  <div class="category-section fade-in" data-cat="Fuggoeny">
-    <div class="category-header">
-      <h2 class="category-title">Függöny</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Fuggoeny"></div>
-  </div>
-
-  <!-- FÜRDŐSZOBA -->
-  <div class="category-section fade-in" data-cat="Furdoszoba">
-    <div class="category-header">
-      <h2 class="category-title">Fürdőszoba</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Furdoszoba"></div>
-  </div>
-
-  <!-- HÁLÓSZOBA -->
-  <div class="category-section fade-in" data-cat="Haloszoba">
-    <div class="category-header">
-      <h2 class="category-title">Hálószoba</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Haloszoba"></div>
-  </div>
-
-  <!-- KERIBÚTOROK -->
-  <div class="category-section fade-in" data-cat="Keributor">
-    <div class="category-header">
-      <h2 class="category-title">Keribútorok</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Keributor"></div>
-  </div>
-
-  <!-- KOMÓDOK -->
-  <div class="category-section fade-in" data-cat="komodok">
-    <div class="category-header">
-      <h2 class="category-title">Komódok</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-komodok"></div>
-  </div>
-
-  <!-- LÁMPÁK -->
-  <div class="category-section fade-in" data-cat="LAMPAK">
-    <div class="category-header">
-      <h2 class="category-title">Lámpák</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-LAMPAK"></div>
-  </div>
-
-  <!-- NAPERNYŐK -->
-  <div class="category-section fade-in" data-cat="Napernyok">
-    <div class="category-header">
-      <h2 class="category-title">Napernyők</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Napernyok"></div>
-  </div>
-
-  <!-- PARAVÁN -->
-  <div class="category-section fade-in" data-cat="paravan">
-    <div class="category-header">
-      <h2 class="category-title">Paraván / Fésülködő</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-paravan"></div>
-  </div>
-
-  <!-- POLCOK -->
-  <div class="category-section fade-in" data-cat="polcok">
-    <div class="category-header">
-      <h2 class="category-title">Polcok</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-polcok"></div>
-  </div>
-
-  <!-- SPORTESZKÖZ -->
-  <div class="category-section fade-in" data-cat="sporteszkoz">
-    <div class="category-header">
-      <h2 class="category-title">Sporteszközök</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-sporteszkoz"></div>
-  </div>
-
-  <!-- SZÉKEK -->
-  <div class="category-section fade-in" data-cat="Szekek">
-    <div class="category-header">
-      <h2 class="category-title">Székek</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Szekek"></div>
-  </div>
-
-  <!-- SZEKRÉNY -->
-  <div class="category-section fade-in" data-cat="szakriny">
-    <div class="category-header">
-      <h2 class="category-title">Szekrények</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-szakriny"></div>
-  </div>
-
-  <!-- SZOBROK -->
-  <div class="category-section fade-in" data-cat="Szobrok">
-    <div class="category-header">
-      <h2 class="category-title">Szobrok</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Szobrok"></div>
-  </div>
-
-  <!-- TV ÁLLVÁNY -->
-  <div class="category-section fade-in" data-cat="TV">
-    <div class="category-header">
-      <h2 class="category-title">TV állvány</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-TV"></div>
-  </div>
-
-  <!-- ÜLŐBÚTOR -->
-  <div class="category-section fade-in" data-cat="Ulobutor">
-    <div class="category-header">
-      <h2 class="category-title">Ülőbútor / Fotel / Kanapé</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Ulobutor"></div>
-  </div>
-
-  <!-- VASSZEKRÉNY -->
-  <div class="category-section fade-in" data-cat="Vasszekreny">
-    <div class="category-header">
-      <h2 class="category-title">Vasszekrények</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Vasszekreny"></div>
-  </div>
-
-  <!-- VIRÁGOK -->
-  <div class="category-section fade-in" data-cat="Viragok">
-    <div class="category-header">
-      <h2 class="category-title">Virágok</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-Viragok"></div>
-  </div>
-
-  <!-- EGYÉB -->
-  <div class="category-section fade-in" data-cat="egyeb">
-    <div class="category-header">
-      <h2 class="category-title">Egyéb kellékek</h2>
-      <span class="category-count">— hamarosan feltöltve</span>
-    </div>
-    <div class="product-grid" id="grid-egyeb">
-      <!-- Fogasok, megálló tábla, zászlótalp, zongora, bőrönd, dummy, kréta tábla, neon, kereszt -->
-      <div class="product-card" onclick="openModal('Fogasok / Posztamens','','Fogasok és posztamensek különböző méretben és kivitelben','','')">
-        <div class="product-img"><span class="product-img-placeholder">🪝</span></div>
-        <div class="product-info">
-          <div class="product-name">Fogasok / Posztamens</div>
-          <div class="product-meta"><span class="product-tag">Egyéb</span></div>
-        </div>
-      </div>
-      <div class="product-card" onclick="openModal('Megálló tábla','','Különböző megálló táblák','','')">
-        <div class="product-img"><span class="product-img-placeholder">🪧</span></div>
-        <div class="product-info">
-          <div class="product-name">Megálló tábla</div>
-          <div class="product-meta"><span class="product-tag">Egyéb</span></div>
-        </div>
-      </div>
-      <div class="product-card" onclick="openModal('Zászlótalp','','Zászlótalpak','','')">
-        <div class="product-img"><span class="product-img-placeholder">🚩</span></div>
-        <div class="product-info">
-          <div class="product-name">Zászlótalp</div>
-          <div class="product-meta"><span class="product-tag">Egyéb</span></div>
-        </div>
-      </div>
-      <div class="product-card" onclick="openModal('Zongora','','Zongora','','')">
-        <div class="product-img"><span class="product-img-placeholder">🎹</span></div>
-        <div class="product-info">
-          <div class="product-name">Zongora</div>
-          <div class="product-meta"><span class="product-tag">Hangszer</span></div>
-        </div>
-      </div>
-      <div class="product-card" onclick="openModal('Kréta tábla','','Nagy kréta tábla','','')">
-        <div class="product-img"><span class="product-img-placeholder">🖊️</span></div>
-        <div class="product-info">
-          <div class="product-name">Kréta tábla</div>
-          <div class="product-meta"><span class="product-tag">Egyéb</span></div>
-        </div>
-      </div>
-      <div class="product-card" onclick="openModal('Neon felirat','','Neon TATTOO és egyéb neon feliratok','','')">
-        <div class="product-img"><span class="product-img-placeholder">✨</span></div>
-        <div class="product-info">
-          <div class="product-name">Neon felirat</div>
-          <div class="product-meta"><span class="product-tag">Dekor</span></div>
-        </div>
+<main>
+  <section class="hero" aria-label="Bemutatkozás" style="padding:0">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="wrap hero-in">
+      <div class="eyebrow">Díszletezés · Kellék · Egyedi gyártás</div>
+      <h1 style="margin-top:14px">Díszlet és kellék filmekhez, <em>1993 óta.</em></h1>
+      <p>Kreatív, innovatív és költséghatékony megoldások hazai és nemzetközi film- és reklámprodukcióknak – a tervezéstől a forgatáson át a visszaállításig. Saját műhely, saját kellékraktár.</p>
+      <div class="hero-cta">
+        <a class="btn gold" href="/raktar.html">Kellékraktár – 870+ tétel</a>
+        <a class="btn ghost" href="#munkaink">Referenciáink</a>
       </div>
     </div>
-  </div>
+    <div class="hero-meta" id="heroMeta"></div>
+  </section>
 
-</div>
-
-<!-- CONTACT -->
-<div class="contact-strip">
-  <h2>Érdeklődjön<br><em>készletről.</em></h2>
-  <p>Részletes árajánlatért és elérhetőségért vegye fel velünk a kapcsolatot.</p>
-  <a href="mailto:info@totalteam.hu" class="contact-btn">Kapcsolat felvétel</a>
-</div>
-
-<footer>© 2026 Total Team — Minden jog fenntartva</footer>
-
-<!-- MODAL -->
-<div class="modal-overlay" id="modal" onclick="closeModal(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('modal').classList.remove('open')">✕</button>
-    <div class="modal-img" id="modalImg"></div>
-    <div class="modal-body">
-      <h3 class="modal-title" id="modalTitle"></h3>
-      <div class="modal-details" id="modalDetails"></div>
-      <a href="mailto:info@totalteam.hu" class="modal-cta">Érdeklődöm</a>
+  <div class="stats">
+    <div class="wrap stats-in">
+      <div class="stat"><b>1993</b><span>óta a filmiparban</span></div>
+      <div class="stat"><b>30+</b><span>film és sorozat referencia</span></div>
+      <div class="stat"><b id="statItems">870+</b><span>tétel a kellékraktárban</span></div>
+      <div class="stat"><b>15+ év</b><span>filmes tapasztalat a csapatban</span></div>
     </div>
   </div>
+
+  <section id="szolgaltatasok">
+    <div class="wrap">
+      <div class="rv">
+        <div class="eyebrow">Szolgáltatások</div>
+        <h2 class="sec">Teljes körű díszletezés,<br>egy csapattól.</h2>
+        <p class="lead">A díszletezés és kelléktervezés minden fázisában részt veszünk: tervezés, előkészítés, kellékgyártás, forgatás és visszaállítás.</p>
+      </div>
+      <div class="svc-grid rv">
+        <div class="svc"><span class="n">01</span><h3>Díszletezés, berendezés</h3><p>Helyszínek és stúdiódíszletek berendezése korhű vagy kortárs környezetben, filmekhez, sorozatokhoz és reklámokhoz.</p></div>
+        <div class="svc"><span class="n">02</span><h3>Kellékek, egyedi gyártás</h3><p>Kelléktervezés és egyedi gyártás saját műhelyünkben – ha nincs ilyen, megcsináljuk.</p></div>
+        <div class="svc"><span class="n">03</span><h3>Kellékraktár bérlés</h3><p>Bútorok, lámpák, dekorációk és kiegészítők bérelhetően, online kereshető katalógussal.</p><a href="/raktar.html">Raktár böngészése →</a></div>
+        <div class="svc"><span class="n">04</span><h3>Forgatási jelenlét</h3><p>Set dresserek a forgatáson, átrendezés, utómunka és visszaállítás – angolul is.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="works" id="munkaink">
+    <div class="wrap">
+      <div class="works-head rv">
+        <div>
+          <div class="eyebrow">Munkáink</div>
+          <h2 class="sec">Produkciók, amelyekben dolgoztunk</h2>
+        </div>
+      </div>
+      <div class="featured rv" id="featured"></div>
+      <div class="works-head" style="margin-bottom:16px">
+        <div class="tabs" role="tablist" id="refTabs">
+          <button type="button" class="on" data-k="film">Filmek, sorozatok</button>
+          <button type="button" data-k="reklam">Reklámok</button>
+        </div>
+        <span class="lead" id="refCount" style="font-size:13px"></span>
+      </div>
+      <ul class="reflist" id="refList"></ul>
+      <div class="ref-more"><button class="btn line" type="button" id="refMore" hidden>Továbbiak</button></div>
+    </div>
+  </section>
+
+  <section id="galeria">
+    <div class="wrap">
+      <div class="rv">
+        <div class="eyebrow">Díszletek</div>
+        <h2 class="sec">A forgatásokról</h2>
+        <p class="lead">Néhány pillanat az elmúlt évek díszleteiből.</p>
+      </div>
+      <div class="gal rv" id="gal"></div>
+    </div>
+  </section>
+
+  <section class="store" id="raktar">
+    <div class="wrap store-in">
+      <div class="rv">
+        <div class="eyebrow">Kellékraktár</div>
+        <h2 class="sec">Bérelhető kellékek, online katalógusban.</h2>
+        <p class="lead">Böngéssz a raktárunkban, gyűjtsd össze, ami kell, és egyetlen bérlési igényként küldd el nekünk.</p>
+        <ul>
+          <li><span id="storeCount">870+</span> tétel méretekkel, darabszámmal, fotókkal</li>
+          <li>Szűrés kategória, szín, anyag, stílus és méret szerint</li>
+          <li>Bérlési lista – egy email az összes tételről</li>
+        </ul>
+        <a class="btn gold" href="/raktar.html">Raktár megnyitása</a>
+        <div class="cats" id="storeCats"></div>
+      </div>
+      <div class="store-grid rv" id="storeGrid" aria-label="Válogatás a raktárból"></div>
+    </div>
+  </section>
+
+  <section class="about" id="rolunk">
+    <div class="wrap about-in">
+      <div class="rv">
+        <div class="eyebrow">Rólunk</div>
+        <h2 class="sec">Kreativitás és innováció.</h2>
+        <blockquote>„Ha egy ötlet elsőre nem tűnik abszurdnak, akkor nincs rá remény.”<cite>– Albert Einstein</cite></blockquote>
+      </div>
+      <div class="txt rv">
+        <p>Cégünket 1993-ban alapítottuk. A világ azóta sokat változott, de mi ma is mindent alaposan és teljes elkötelezettséggel csinálunk – mert hiszünk ebben.</p>
+        <p>Fő tevékenységünk a díszletezés, a kelléktervezés és az egyedi gyártás filmekhez és reklámokhoz. Kreatív, innovatív és költséghatékony megoldásokat kínálunk.</p>
+        <p>Csapatunk tagjai évek óta dolgoznak együtt, többen közülük több mint 15 éve a filmiparban. Saját műhelyünk és kellékraktárunk van, amelyet folyamatosan fejlesztünk.</p>
+        <p>A csapat nagy része folyékonyan beszél angolul; dolgoztunk nemzetközi és hazai produkciókban, filmeken és reklámokon egyaránt.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact" id="kapcsolat">
+    <div class="wrap">
+      <div class="rv">
+        <div class="eyebrow">Kapcsolat</div>
+        <h2 class="sec">Beszéljünk a következő forgatásról.</h2>
+        <p class="lead">Díszletezés, kellékgyártás vagy bérlés – keress minket telefonon vagy emailben.</p>
+      </div>
+      <div class="c-grid rv">
+        <a class="c-card" href="tel:+36209611015"><small>Díszletezés</small><b>+36 20 961 1015</b><span>Hívj minket bármilyen kérdéssel</span></a>
+        <a class="c-card" href="mailto:info@totalteam.hu"><small>Email</small><b>info@totalteam.hu</b><span>Bérlési igények, árajánlat</span></a>
+        <div class="c-card"><small>Műhely és raktár</small><b>Budapest</b><span>Kellékátvétel előzetes egyeztetéssel</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap f-in">
+    <a class="logo" href="#">Total Team<span>.</span></a>
+    <nav><a href="#munkaink">Munkáink</a><a href="/raktar.html">Kellékraktár</a><a href="#kapcsolat">Kapcsolat</a><a href="/admin.html">Belső felület</a></nav>
+    <span>© <span id="yr"></span> Total Team · Creativity and Innovation</span>
+  </div>
+</footer>
+
+<div class="lightbox" id="lb" hidden role="dialog" aria-modal="true" aria-label="Kép nagyítva">
+  <button class="lb-x" type="button" aria-label="Bezárás">✕</button>
+  <button class="lb-p" type="button" aria-label="Előző">‹</button>
+  <img alt="">
+  <button class="lb-n" type="button" aria-label="Következő">›</button>
 </div>
 
 <script>
-// FILTER
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const cat = btn.dataset.cat;
-    document.querySelectorAll('.category-section').forEach(sec => {
-      if (cat === 'all' || sec.dataset.cat === cat) {
-        sec.classList.remove('hidden');
-      } else {
-        sec.classList.add('hidden');
-      }
-    });
-  });
-});
+// ── Tartalom: a team5.hu régi oldaláról átvéve (filmek, reklámok, díszletfotók)
+const IMG = 'https://team5.hu/images/phocagallery/thumbs/phoca_thumb_l_';
+const HERO = ['theking1.jpg', 'xcompany%20series_3%209.jpg', 'baptiste2.jpg', '101%20yom%202.jpg', 'outside.jpg'];
+const FEATURED = [
+  { t: 'The King', s: 'Díszlet', img: 'theking2.jpg' },
+  { t: 'Baptiste', s: 'Díszlet', img: 'baptiste2v2.jpg' },
+  { t: 'X Company', s: 'Temple Street · 2014–2016', img: 'xcompany%20series_3%2014.jpg' },
+  { t: '101 Year Old Man…', s: 'NICE FLX Pictures', img: '101%20yom%208.jpg' },
+];
+const FILMS = [
+  ['2018', 'The King', '', ''], ['2018', 'Colette', '', ''], ['2017', 'Vanity Fair', '', ''], ['2017', 'The Crown', '', ''],
+  ['2016', 'The 101-Year-Old Man Who Skipped Out on the Bill and Disappeared', 'Felix Herngren, Måns Herngren', 'NICE FLX Pictures'],
+  ['2016', 'X Company', 'Mark Ellis, Stephanie Morgenstern', 'Temple Street Productions'],
+  ['2016', 'The Crown', 'Peter Morgan', 'Left Bank Pictures, Sony Pictures TV'],
+  ['2015', 'Spy', 'Paul Feig', '20th Century Fox'],
+  ['2015', 'Tiszta szívvel', 'Till Attila', 'Laokoon Film'],
+  ['2015', 'Virtuoso', 'Alan Ball', 'HBO'],
+  ['2015', 'The Martian', 'Ridley Scott', '20th Century Fox'],
+  ['2015', 'Maigret Sets a Trap', 'Ashley Pearce', 'Ealing Studios'],
+  ['2015', "Maigret's Dead Man", 'Jon East', 'Ealing Studios'],
+  ['2014', 'X Company', 'David Frazee', 'Cantina Studio, Temple Street'],
+  ['2014', 'Hercules', 'Brett Ratner', 'Paramount Pictures, MGM'],
+  ['2014', 'Fallen', 'Scott Hicks', 'Lotus Entertainment'],
+  ['2013', 'Die Hard 5.', 'John Moore', '20th Century Fox'],
+  ['2013', 'Anti-Social', 'Reg Traviss', 'RST Pictures'],
+  ['2013', 'Társas játék 2.', 'Herendi Gábor, Fazekas Péter', 'HBO'],
+  ['2012', 'In the Land of Blood and Honey', 'Angelina Jolie', 'GK Films'],
+  ['2012', 'The Borgias', 'Neil Jordan', 'Amblin Television'],
+  ['2012', 'Six Dance Lessons in Six Weeks', 'Arthur Allan Seidelman', 'Entpro / Docler Entertainment'],
+  ['2012', 'The 100-Year-Old Man Who Climbed Out the Window and Disappeared', 'Felix Herngren', 'NICE FLX Pictures'],
+  ['2012', 'Londoni randevú', 'Diarmuid Lawrence', 'BBC'],
+  ['2011', 'The Eagle', 'Kevin Macdonald', 'Focus Features, Film4'],
+  ['2011', 'Isenhart', 'Hansjörg Thurn', 'Ninety-Minute Film, Dor Film'],
+  ['2011', 'El Ángel de Budapest', 'Luis Oliveros', 'Boomerang'],
+  ['2011', 'Tinker Tailor Soldier Spy', 'Tomas Alfredson', 'StudioCanal'],
+  ['2011', 'Társas játék 1.', 'Herendi Gábor', 'HBO'],
+  ['2011', 'Open Grave', 'Gonzalo López-Gallego', 'Atlas Independent'],
+];
+const ADS = [
+  ['2014', 'Karl Fazer'], ['2014', 'SIÓ'], ['2014', 'SIÓ – Frissen préselt'], ['2014', 'Elkjøp'],
+  ['2014', 'Vodafone Red – Mindig együtt'], ['2014', 'Vodafone Red – Közös élmény'], ['2014', 'Centraal Beheer Achmea'],
+  ['2014', 'OMNIA'], ['2013', 'Új Széchenyi Terv (5 film)'],
+];
+const GALLERY = ['theking3.jpg', 'xcompany%20series_3%205.jpg', 'baptiste2.jpg', '101%2015.jpg', 'harryhaft1.jpg', 'utca%2013.jpg',
+  'xcompany%20series_3%2018.jpg', 'msharris.jpg', 'szegnyes%20laksok%207.jpg', '101%20yom%2018.jpg', 'harryhaft2.jpg', 'utca%2027.jpg'];
 
-// SEARCH
-document.getElementById('searchInput').addEventListener('input', function() {
-  const q = this.value.toLowerCase().trim();
-  if (!q) {
-    document.querySelectorAll('.category-section').forEach(s => s.classList.remove('hidden'));
-    document.querySelectorAll('.product-card').forEach(c => c.style.display = '');
-    return;
-  }
-  document.querySelectorAll('.category-section').forEach(sec => {
-    const cards = sec.querySelectorAll('.product-card');
-    let any = false;
-    cards.forEach(card => {
-      const name = card.querySelector('.product-name').textContent.toLowerCase();
-      if (name.includes(q)) { card.style.display = ''; any = true; }
-      else card.style.display = 'none';
-    });
-    sec.classList.toggle('hidden', !any);
-  });
-});
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+$('yr').textContent = new Date().getFullYear();
 
-// MODAL
-function openModal(title, imgSrc, desc, qty, size) {
-  document.getElementById('modalTitle').textContent = title;
-  const imgEl = document.getElementById('modalImg');
-  if (imgSrc) {
-    imgEl.innerHTML = `<img src="${imgSrc}" alt="${title}">`;
-  } else {
-    imgEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:4rem;opacity:0.3;">📦</div>`;
-  }
-  const details = document.getElementById('modalDetails');
-  details.innerHTML = '';
-  if (qty) details.innerHTML += `<span class="modal-detail">🔢 ${qty} db</span>`;
-  if (size) details.innerHTML += `<span class="modal-detail">📐 ${size}</span>`;
-  if (desc) details.innerHTML += `<span class="modal-detail">${desc}</span>`;
-  document.getElementById('modal').classList.add('open');
+// Fejléc: átlátszó a nyitókép felett, utána fehér
+const top_ = $('top');
+const onScroll = () => top_.classList.toggle('solid', scrollY > innerHeight * 0.75);
+addEventListener('scroll', onScroll, { passive: true }); onScroll();
+$('menuBtn').onclick = () => { const o = top_.classList.toggle('open'); $('menuBtn').setAttribute('aria-expanded', o); };
+$('nav').addEventListener('click', e => { if (e.target.closest('a')) top_.classList.remove('open'); });
+
+// Nyitókép: lassan váltakozó díszletfotók
+const heroImgs = HERO.map((f, i) => { const im = new Image(); im.alt = ''; im.decoding = 'async'; if (i) im.loading = 'lazy'; im.src = IMG + f; im.onerror = () => im.remove(); $('heroBg').appendChild(im); return im; });
+let hi = 0; const showHero = () => { heroImgs.forEach((im, i) => im.classList.toggle('on', i === hi)); };
+heroImgs[0].addEventListener('load', showHero); if (heroImgs[0].complete) showHero();
+if (!matchMedia('(prefers-reduced-motion: reduce)').matches) setInterval(() => { const live = heroImgs.filter(im => im.isConnected); if (live.length < 2) return; hi = (hi + 1) % heroImgs.length; while (!heroImgs[hi].isConnected) hi = (hi + 1) % heroImgs.length; showHero(); }, 6500);
+
+// Kiemelt munkák
+$('featured').innerHTML = FEATURED.map(f => `<figure class="feat"><img src="${IMG + f.img}" alt="${esc(f.t)} – díszlet" loading="lazy" onerror="this.remove()"><figcaption><b>${esc(f.t)}</b><span>${esc(f.s)}</span></figcaption></figure>`).join('');
+
+// Referencia lista
+let refKind = 'film', refAll = false;
+function renderRefs() {
+  const list = refKind === 'film' ? FILMS : ADS.map(a => [a[0], a[1], '', '']);
+  const shown = refAll || refKind !== 'film' ? list : list.slice(0, 12);
+  $('refList').innerHTML = shown.map(([y, t, d, p]) => `<li class="ref"><span class="y">${y}</span><span class="t">${esc(t)}</span><span class="d">${esc(d)}</span><span class="p">${esc(p)}</span></li>`).join('');
+  $('refMore').hidden = shown.length >= list.length;
+  $('refMore').textContent = `Mind a ${list.length} megjelenítése`;
+  $('refCount').textContent = refKind === 'film' ? `${list.length} produkció` : `${ADS.length} kampány`;
 }
-function closeModal(e) {
-  if (e.target === document.getElementById('modal')) {
-    document.getElementById('modal').classList.remove('open');
-  }
-}
+$('refTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; refKind = b.dataset.k; refAll = false; $('refTabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); renderRefs(); });
+$('refMore').onclick = () => { refAll = true; renderRefs(); };
+renderRefs();
 
-// FADE IN
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.08 });
-document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+// Galéria + nagyító
+$('gal').innerHTML = GALLERY.map((f, i) => `<a href="${IMG + f}" data-i="${i}"><img src="${IMG + f}" alt="Díszletfotó" loading="lazy" onerror="this.parentElement.remove()"></a>`).join('');
+let li = 0; const lb = $('lb'), lbImg = lb.querySelector('img');
+const lbShow = i => { const items = [...$('gal').querySelectorAll('a')]; if (!items.length) return; li = (i + items.length) % items.length; lbImg.src = items[li].href; lb.hidden = false; };
+$('gal').addEventListener('click', e => { const a = e.target.closest('a'); if (!a) return; e.preventDefault(); lbShow([...$('gal').querySelectorAll('a')].indexOf(a)); });
+lb.querySelector('.lb-x').onclick = () => { lb.hidden = true; };
+lb.querySelector('.lb-p').onclick = () => lbShow(li - 1);
+lb.querySelector('.lb-n').onclick = () => lbShow(li + 1);
+lb.addEventListener('click', e => { if (e.target === lb) lb.hidden = true; });
+addEventListener('keydown', e => { if (lb.hidden) return; if (e.key === 'Escape') lb.hidden = true; if (e.key === 'ArrowLeft') lbShow(li - 1); if (e.key === 'ArrowRight') lbShow(li + 1); });
+
+// Raktár ajánló: élő tételek a raktár oldalból (képpel rendelkező, szabad tételek közül véletlenszerűen)
+(async () => {
+  try {
+    const html = await (await fetch('/raktar.html')).text();
+    const m = html.match(/const PRODUCTS = (\[.*?\]);\s*\n/s); if (!m) return;
+    const P = JSON.parse(m[1]);
+    const n = Math.floor(P.length / 10) * 10 + '+';
+    $('statItems').textContent = n; $('storeCount').textContent = n;
+    const R2 = 'https://pub-ad286558042d41eeaf37bc1c3f5badd8.r2.dev/';
+    const thumb = u => !u.startsWith(R2) ? u : R2 + 'web/thumb/' + u.slice(R2.length).replace(/\.(jpe?g|png|webp|avif|heic)$/i, '') + '.jpg';
+    const pool = P.filter(p => p.status !== 'foglalt' && p.imgs && p.imgs.length && !/\.heic$/i.test(p.imgs[0]));
+    const pick = []; const byCat = {};
+    pool.forEach(p => (byCat[p.category] = byCat[p.category] || []).push(p));
+    const cats = Object.keys(byCat).sort(() => Math.random() - .5);
+    for (const c of cats) { if (pick.length >= 6) break; const arr = byCat[c]; pick.push(arr[Math.floor(Math.random() * arr.length)]); }
+    $('storeGrid').innerHTML = pick.map(p => `<a class="sitem" href="/raktar.html#${encodeURIComponent(p.code)}"><div class="im"><img src="${esc(thumb(p.imgs[0]))}" data-o="${esc(p.imgs[0])}" alt="${esc(p.name)}" loading="lazy" onerror="if(this.dataset.o&&this.src!==this.dataset.o){this.src=this.dataset.o}else{this.closest('.sitem').remove()}"></div><div class="tx">${esc(p.name)}<small>${esc(p.category)}${p.dims ? ' · ' + esc(p.dims) + ' cm' : ''}</small></div></a>`).join('');
+    const counts = {}; P.forEach(p => counts[p.category] = (counts[p.category] || 0) + 1);
+    $('storeCats').innerHTML = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([c, k]) => `<a href="/raktar.html">${esc(c)} · ${k}</a>`).join('');
+  } catch (e) {}
+})();
+
+// Megjelenési animáció görgetéskor
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+document.querySelectorAll('.rv').forEach(el => io.observe(el));
 </script>
 </body>
 </html>

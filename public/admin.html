@@ -2,6 +2,7 @@
 <html lang="hu">
 <head>
 <meta charset="utf-8">
+<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Raktár Kivitelek</title>
@@ -133,6 +134,10 @@ table.sum td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertic
 table.sum td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .sum-wrap { overflow-x: auto; }
 
+.stock-logo { display: inline-flex; border-radius: 6px; overflow: hidden; height: 42px; border: 1px solid var(--border); transition: transform .15s, box-shadow .15s; }
+.stock-logo:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.stock-logo img { height: 40px; width: auto; display: block; }
+
 /* Szerkesztés */
 .edit-banner { display: flex; align-items: center; gap: 8px; background: var(--accent-bg); color: var(--fg); border: 1px solid var(--accent); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; }
 .edit-banner b { flex: 1; min-width: 0; overflow-wrap: anywhere; }
@@ -220,7 +225,7 @@ html, body { overflow-x: hidden; }
       </nav>
       <div class="head-right">
         <button class="btn small primary scan-open" id="scanOpen" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="4" height="4"/><rect x="13" y="13" width="4" height="4"/><path d="M13 7h4v2M7 15v2h2"/></svg>Beolvasás</button>
-        <a class="btn small scan-open" href="/raktar.html" style="text-decoration:none;display:inline-flex;align-items:center;color:var(--fg)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9 12 4l9 5v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M7 20v-6h10v6M7 17h10"/></svg>Raktárkészlet</a>
+        <a class="stock-logo" href="/raktar.html" title="Raktárkészlet" aria-label="Raktárkészlet"><picture><source srcset="/img/total-team-logo.jpg" media="(prefers-color-scheme: dark)"><img src="/img/total-team-logo-light.jpg" alt="Total Team – raktárkészlet" width="44" height="41"></picture></a>
         <a class="link-btn" href="/cimkek.html" target="_blank" rel="noopener">Címkék ↗</a>
         <button class="link-btn" id="logout" type="button">Kilépés</button>
       </div>
