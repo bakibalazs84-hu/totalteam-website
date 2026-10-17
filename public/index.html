@@ -126,10 +126,9 @@ section { padding: clamp(64px, 10vw, 120px) 0; }
 /* ── Galéria */
 .gal { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: 150px; gap: 8px; margin-top: 40px; }
 .gal a { position: relative; border-radius: 6px; overflow: hidden; background: var(--pill-bg); }
+.gal a { grid-column: span 2; }
 .gal a:nth-child(1) { grid-column: span 3; grid-row: span 2; }
-.gal a:nth-child(2), .gal a:nth-child(7) { grid-column: span 3; }
-.gal a:nth-child(n+3) { grid-column: span 2; }
-.gal a:nth-child(2) { grid-column: span 3; }
+.gal a:nth-child(2), .gal a:nth-child(3) { grid-column: span 3; }
 .gal img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s, filter .3s; }
 .gal a:hover img { transform: scale(1.04); }
 .lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(10,10,9,.92); display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -369,14 +368,14 @@ footer a:hover { color: #fff; }
 </div>
 
 <script>
-// ── Tartalom: a team5.hu régi oldaláról átvéve (filmek, reklámok, díszletfotók)
-const IMG = 'https://team5.hu/images/phocagallery/thumbs/phoca_thumb_l_';
-const HERO = ['xcompany%20series_3%209.jpg', '101%20yom%202.jpg', 'utca%2013.jpg', 'phoca_thumb_l_six%20dance%20lesson%20in%20six%20weeks%2025.jpg', 'xcompany%20series_3%205.jpg'];
+// ── Tartalom: a régi team5.hu oldalról átvéve; a fotók saját tárhelyen (public/img/galeria), az eredetik a Drive TEAM5/Weblap/team5-kepek mappában
+const IMG = '/img/galeria/';
+const HERO = ['hero-1.jpg', 'hero-2.jpg', 'hero-3.jpg', 'hero-4.jpg', 'hero-5.jpg'];
 const FEATURED = [
-  { t: 'X Company', s: 'Temple Street Productions · 2014–2016', img: 'xcompany%20series_3%2014.jpg' },
-  { t: '101 Year Old Man…', s: 'NICE FLX Pictures · 2016', img: '101%20yom%208.jpg' },
-  { t: 'Six Dance Lessons in Six Weeks', s: 'Entpro / Docler · 2012', img: 'phoca_thumb_l_six%20dance%20lesson%20in%20six%20weeks%2021.jpg' },
-  { t: 'Lakásbelsők', s: 'Díszletek', img: 'szegnyes%20laksok%207.jpg' },
+  { t: 'X Company', s: 'Temple Street Productions · 2014–2016', img: 'xcompany.jpg' },
+  { t: '101 Year Old Man…', s: 'NICE FLX Pictures · 2016', img: '101-year-old-man.jpg' },
+  { t: 'Utcadíszletek', s: 'Korhű városképek', img: 'utcadiszlet.jpg' },
+  { t: 'Enteriőrök', s: 'Lakás- és szobadíszletek', img: 'enterior.jpg' },
 ];
 const FILMS = [
   ['2018', 'The King', '', ''], ['2018', 'Colette', '', ''], ['2017', 'Vanity Fair', '', ''], ['2017', 'The Crown', '', ''],
@@ -412,8 +411,7 @@ const ADS = [
   ['2014', 'Vodafone Red – Mindig együtt'], ['2014', 'Vodafone Red – Közös élmény'], ['2014', 'Centraal Beheer Achmea'],
   ['2014', 'OMNIA'], ['2013', 'Új Széchenyi Terv (5 film)'],
 ];
-const GALLERY = ['xcompany%20series_3%205.jpg', '101%2015.jpg', 'utca%2027.jpg', 'szegnyes%20laksok%2012.jpg', '101%20yom%2018.jpg', 'utca%201.jpg',
-  'xcompany%20series_3%2018.jpg', 'phoca_thumb_l_six%20dance%20lesson%20in%20six%20weeks%2032.jpg', 'szegnyes%20laksok%203.jpg', '101%207.jpg', 'utca%209.jpg', 'phoca_thumb_l_six%20dance%20lesson%20in%20six%20weeks%2010.jpg'];
+const GALLERY = ['g01.jpg', 'g02.jpg', 'g03.jpg', 'g04.jpg', 'g05.jpg', 'g06.jpg', 'g07.jpg', 'g08.jpg', 'g09.jpg', 'g10.jpg', 'g11.jpg', 'g12.jpg'];
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
