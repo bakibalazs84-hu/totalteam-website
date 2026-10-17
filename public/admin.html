@@ -87,6 +87,8 @@ label.f { display: flex; flex-direction: column; gap: 3px; font-size: 11px; colo
 .stock b { color: var(--fg); }
 .stock .out { color: var(--warn); }
 .add-ico { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--accent); font-size: 16px; }
+.prow .qty.pq button { width: 30px; height: 30px; background: var(--surface); }
+.prow .qty.pq output { width: 32px; background: var(--surface); }
 .prow.sel .add-ico { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .more { text-align: center; padding: 10px; }
 
@@ -391,7 +393,9 @@ function renderPList() {
     return `<li class="prow ${sel.has(p.id) ? 'sel' : ''}" data-id="${p.id}">${thumb(p)}
       <div class="pinfo"><div class="pname">${esc(p.name)}</div><div class="pmeta">${p.code}${p.dims ? ' · ' + esc(p.dims) + ' cm' : ''}</div></div>
       <div class="stock">Készlet: <b>${p.qty}</b>${o ? `<br><span class="out">kint: ${o}</span>` : ''}</div>
-      <span class="add-ico">${sel.has(p.id) ? '✓' : '+'}</span></li>`;
+      ${sel.has(p.id)
+        ? `<div class="qty pq"><button type="button" data-pa="-" aria-label="Kevesebb">−</button><output>${sel.get(p.id)}</output><button type="button" data-pa="+" aria-label="Több">+</button></div>`
+        : '<span class="add-ico">+</span>'}</li>`;
   }).join('') : '<li class="empty">Nincs találat.</li>';
   $('pmore').hidden = list.length <= pshown;
   $('pmoreBtn').textContent = `Továbbiak (még ${Math.max(0, list.length - pshown)})`;
@@ -401,7 +405,16 @@ let pqT; $('pq').addEventListener('input', () => { clearTimeout(pqT); pqT = setT
 $('pmoreBtn').onclick = () => { pshown += 60; renderPList(); };
 $('plist').addEventListener('click', e => {
   const r = e.target.closest('.prow'); if (!r) return;
-  const id = r.dataset.id;
+  const id = r.dataset.id, pb = e.target.closest('button[data-pa]');
+  if (pb) {
+    // Darabszám a listában: + max a készletig, − 1-nél kiveszi a tételt
+    const p = byId.get(id), n = sel.get(id) || 0, v = selRet.get(id) || 0;
+    if (pb.dataset.pa === '+') { if (n < p.qty) sel.set(id, n + 1); else toast(`${p.code}: a készlet ${p.qty} db`); }
+    else if (n > Math.max(1, v)) sel.set(id, n - 1);
+    else if (v) toast('Előbb a visszahozott darabszámot csökkentsd.');
+    else { sel.delete(id); selRet.delete(id); }
+    renderPList(); renderSel(); return;
+  }
   if (sel.has(id)) { sel.delete(id); selRet.delete(id); } else sel.set(id, 1);
   renderPList(); renderSel();
 });
