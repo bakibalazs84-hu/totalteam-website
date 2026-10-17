@@ -556,15 +556,17 @@ function retPanelHTML(r) {
   const total = [...retSel.values()].reduce((s, n) => s + n, 0);
   return `<div class="retpanel">
     <div class="rp-head"><b>Visszavétel</b><label class="f">Dátum<input type="date" class="rp-date" value="${esc(retDate)}"></label></div>
-    <p class="muted">Állítsd be, melyik tételből hány db jött vissza most. A többi kint marad.</p>
+    <p class="muted">Alapból minden kint lévő darab be van jelölve. Ami még kint marad, annál csökkentsd a számot.</p>
     <ul class="rp-list">${rowsH}</ul>
-    <div class="rp-foot"><button class="link-btn" type="button" data-act="rp-all">Mind vissza</button><span class="acts"><button class="link-btn" type="button" data-act="rp-cancel">Mégse</button>
+    <div class="rp-foot"><span class="acts"><button class="link-btn" type="button" data-act="rp-all">Mind</button><button class="link-btn" type="button" data-act="rp-none">Egyik sem</button></span><span class="acts"><button class="link-btn" type="button" data-act="rp-cancel">Mégse</button>
       <button class="btn small primary" type="button" data-act="rp-save" ${total ? '' : 'disabled'}>${total ? `${total} db visszavétele` : 'Válassz tételt'}</button></span></div>
   </div>`;
 }
 function openRet(r, onlyIdx) {
   retOpen = r.id; retSel.clear(); retDate = today();
+  // Alapból minden kint lévő tétel teljes darabszámmal be van állítva – csak a kint maradókat kell csökkenteni
   if (onlyIdx != null) retSel.set(onlyIdx, remaining(r.tetelek[onlyIdx]));
+  else r.tetelek.forEach((t, j) => { if (remaining(t)) retSel.set(j, remaining(t)); });
   renderLists();
   const c = document.querySelector(`.kcard[data-id="${CSS.escape(r.id)}"] .retpanel`); if (c) c.scrollIntoView({ block: 'nearest' });
 }
@@ -639,6 +641,7 @@ async function onCardClick(e) {
     else if (act === 'rp-') { if (n > 0) retSel.set(i, n - 1); }
     else if (act === 'rp-max') retSel.set(i, n === rem ? 0 : rem);
     else if (act === 'rp-all') r.tetelek.forEach((t, j) => { if (remaining(t)) retSel.set(j, remaining(t)); });
+    else if (act === 'rp-none') retSel.clear();
     else if (act === 'rp-cancel') { retOpen = null; retSel.clear(); }
     else if (act === 'rp-save') {
       const d = retDate || today();
