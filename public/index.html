@@ -248,7 +248,7 @@ footer a:hover { color: #fff; }
   <div class="stats">
     <div class="wrap stats-in">
       <div class="stat"><b>1993</b><span>óta a filmiparban</span></div>
-      <div class="stat"><b>30+</b><span>film és sorozat referencia</span></div>
+      <div class="stat"><b>40+</b><span>film és sorozat referencia</span></div>
       <div class="stat"><b id="statItems">870+</b><span>tétel a kellékraktárban</span></div>
       <div class="stat"><b>15+ év</b><span>filmes tapasztalat a csapatban</span></div>
     </div>
@@ -372,38 +372,52 @@ footer a:hover { color: #fff; }
 const IMG = '/img/galeria/';
 const HERO = ['hero-1.jpg', 'hero-2.jpg', 'hero-3.jpg', 'hero-4.jpg', 'hero-5.jpg'];
 const FEATURED = [
-  { t: 'X Company', s: 'Temple Street Productions · 2014–2016', img: 'xcompany.jpg' },
+  { t: 'X Company', s: 'Temple Street Productions · 2014–2017', img: 'xcompany.jpg' },
   { t: '101 Year Old Man…', s: 'NICE FLX Pictures · 2016', img: '101-year-old-man.jpg' },
   { t: 'Utcadíszletek', s: 'Korhű városképek', img: 'utcadiszlet.jpg' },
   { t: 'Enteriőrök', s: 'Lakás- és szobadíszletek', img: 'enterior.jpg' },
 ];
 const FILMS = [
-  ['2018', 'The King', '', ''], ['2018', 'Colette', '', ''], ['2017', 'Vanity Fair', '', ''], ['2017', 'The Crown', '', ''],
-  ['2016', 'The 101-Year-Old Man Who Skipped Out on the Bill and Disappeared', 'Felix Herngren, Måns Herngren', 'NICE FLX Pictures'],
-  ['2016', 'X Company', 'Mark Ellis, Stephanie Morgenstern', 'Temple Street Productions'],
-  ['2016', 'The Crown', 'Peter Morgan', 'Left Bank Pictures, Sony Pictures TV'],
+  ['2025', 'La chambre de Mariana (Mariana szobája)', 'Emmanuel Finkiel', 'Curiosa Films, Cinefrance Studios, Arte France Cinéma'],
+  ['2024', 'Maria', 'Pablo Larraín', 'The Apartment, Komplizen Film, Fabula'],
+  ['2021–2025', 'FBI: International (sorozat)', 'Derek Haas, Dick Wolf', 'Wolf Entertainment, CBS Studios, Universal Television'],
+  ['2022', 'Mrs. Harris Goes to Paris', 'Anthony Fabian', 'eOne Features, Superbe Films, Moonriver'],
+  ['2022', 'The Fear Index (sorozat)', 'Robert Harris regénye nyomán', 'Left Bank Pictures, FILLSCRN, Videoassist.hu'],
+  ['2022', 'The Fishing Net (rövidfilm)', 'Anna Palinkas', 'Good Kids'],
+  ['2021', 'The Survivor', 'Barry Levinson', 'New Mandate Films, BRON Studios, Creative Wealth Media'],
+  ['2021', 'Escape Room: Tournament of Champions', 'Adam Robitel', 'Columbia Pictures, Original Film'],
+  ['2021', 'Outside the Wire', 'Mikael Håfström', '42, Automatik Entertainment, Leeding Media'],
+  ['2021', 'Baptiste (sorozat)', 'Jack Williams, Harry Williams', 'Two Brothers Pictures, BBC'],
+  ['2019', 'The King', 'David Michôd', 'Netflix, Plan B Entertainment, Porchlight Films'],
+  ['2018', 'Genius (sorozat)', 'Kenneth Biller, Noah Pink', 'Fox 21 Television Studios, 20th Television, EUE / Sokolow'],
+  ['2018', 'Colette', 'Wash Westmoreland', 'Bold Films, BFI, HanWay Films'],
+  ['2017', 'Vanity Fair (sorozat)', 'James Strong', 'Mammoth Screen, Amazon Studios'],
+  ['2017', "The Hunter's Prayer", 'Jonathan Mostow', 'Apollo Media, Elipsis Capital, FilmEngine'],
+  ['2016–2017', 'The Crown (sorozat)', 'Peter Morgan', 'Left Bank Pictures, Sony Pictures Television'],
+  ['2014–2017', 'X Company (sorozat)', 'Mark Ellis, Stephanie Morgenstern', 'Temple Street Productions'],
+  ['2016', 'The 101-Year-Old Man Who Skipped Out on the Bill and Disappeared', 'Felix Herngren, Måns Herngren', 'NICE FLX Pictures, Proton Cinema'],
   ['2015', 'Spy', 'Paul Feig', '20th Century Fox'],
   ['2015', 'Tiszta szívvel', 'Till Attila', 'Laokoon Film'],
   ['2015', 'Virtuoso', 'Alan Ball', 'HBO'],
   ['2015', 'The Martian', 'Ridley Scott', '20th Century Fox'],
-  ['2015', 'Maigret Sets a Trap', 'Ashley Pearce', 'Ealing Studios'],
-  ['2015', "Maigret's Dead Man", 'Jon East', 'Ealing Studios'],
-  ['2014', 'X Company', 'David Frazee', 'Cantina Studio, Temple Street'],
+  ['2015', 'Maigret Sets a Trap', 'Ashley Pearce', 'Ealing Studios, Maigret Productions'],
+  ['2015', "Maigret's Dead Man", 'Jon East', 'Ealing Studios, Maigret Productions'],
+  ['2015', '9. april', 'Roni Ezra', 'Nordisk Film, Proton Cinema, TV2 Danmark'],
+  ['2015', 'Anti-Social', 'Reg Traviss', 'RST Pictures, JRSM Films, Origo Film Group'],
   ['2014', 'Hercules', 'Brett Ratner', 'Paramount Pictures, MGM'],
   ['2014', 'Fallen', 'Scott Hicks', 'Lotus Entertainment'],
+  ['2014', 'Six Dance Lessons in Six Weeks', 'Arthur Allan Seidelman', 'Docler Entertainment, Entpro'],
   ['2013', 'Die Hard 5.', 'John Moore', '20th Century Fox'],
-  ['2013', 'Anti-Social', 'Reg Traviss', 'RST Pictures'],
-  ['2013', 'Társas játék 2.', 'Herendi Gábor, Fazekas Péter', 'HBO'],
+  ['2013', 'The 100-Year-Old Man Who Climbed Out the Window and Disappeared', 'Felix Herngren', 'NICE FLX Pictures, FLX, Nice Drama'],
+  ['2013', 'Társas játék 2. (sorozat)', 'Herendi Gábor, Fazekas Péter', 'HBO'],
   ['2012', 'In the Land of Blood and Honey', 'Angelina Jolie', 'GK Films'],
   ['2012', 'The Borgias', 'Neil Jordan', 'Amblin Television'],
-  ['2012', 'Six Dance Lessons in Six Weeks', 'Arthur Allan Seidelman', 'Entpro / Docler Entertainment'],
-  ['2012', 'The 100-Year-Old Man Who Climbed Out the Window and Disappeared', 'Felix Herngren', 'NICE FLX Pictures'],
   ['2012', 'Londoni randevú', 'Diarmuid Lawrence', 'BBC'],
   ['2011', 'The Eagle', 'Kevin Macdonald', 'Focus Features, Film4'],
   ['2011', 'Isenhart', 'Hansjörg Thurn', 'Ninety-Minute Film, Dor Film'],
   ['2011', 'El Ángel de Budapest', 'Luis Oliveros', 'Boomerang'],
   ['2011', 'Tinker Tailor Soldier Spy', 'Tomas Alfredson', 'StudioCanal'],
-  ['2011', 'Társas játék 1.', 'Herendi Gábor', 'HBO'],
+  ['2011', 'Társas játék 1. (sorozat)', 'Herendi Gábor', 'HBO'],
   ['2011', 'Open Grave', 'Gonzalo López-Gallego', 'Atlas Independent'],
 ];
 const ADS = [
