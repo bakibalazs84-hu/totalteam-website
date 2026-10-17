@@ -139,6 +139,16 @@ table.sum td.num { text-align: right; font-variant-numeric: tabular-nums; font-w
 .sel-item .qcol small { font-size: 10px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .05em; }
 .kfoot .acts { display: flex; gap: 14px; align-items: center; }
 
+/* Részleges visszavétel */
+.khist { font-size: 11px; color: var(--ok); margin-top: 1px; }
+.retpanel { border: 1px solid var(--accent); background: var(--accent-bg); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.rp-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.rp-head input { width: auto; padding: 5px 8px; }
+.rp-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.rp-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 8px; }
+.rp-item.on { border-color: var(--ok); }
+.rp-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+
 /* QR beolvasás */
 .scan-open { display: inline-flex; align-items: center; gap: 6px; }
 .scan-overlay { position: fixed; inset: 0; z-index: 300; background: var(--overlay); display: flex; align-items: center; justify-content: center; padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px)); }
@@ -480,7 +490,15 @@ nf.addEventListener('submit', async e => {
     if (!confirm(`Ezekből több menne ki, mint ami a nyilvántartás szerint bent van:\n\n${lines.join('\n')}\n\nMented így is?`)) return;
     showErr($('newErr'));
   }
-  const tetelek = [...sel].map(([id, qty]) => { const p = prodOf(id); return { id, code: p.code, name: p.name, qty, vissza: Math.min(qty, selRet.get(id) || 0) }; });
+  const tetelek = [...sel].map(([id, qty]) => {
+    const p = prodOf(id), vissza = Math.min(qty, selRet.get(id) || 0);
+    // Visszavételi előzmény megtartása; ha kézzel változott a visszahozott db, az eltérést is naplózzuk
+    let log = editing ? editing.tetelek.filter(t => t.id === id).flatMap(t => t.log || []).map(l => ({ ...l })) : [];
+    let sum = log.reduce((s, l) => s + l.n, 0);
+    if (vissza > sum) log.push({ n: vissza - sum, d: today() });
+    while (sum > vissza && log.length) { const last = log[log.length - 1], cut = Math.min(last.n, sum - vissza); last.n -= cut; sum -= cut; if (!last.n) log.pop(); }
+    return { id, code: p.code, name: p.name, qty, vissza, log };
+  });
   const body = {
     projekt: f.projekt.value, felelos: f.felelos.value, kivitel_napja: f.kivitel_napja.value, vissza_tervezett: f.vissza_tervezett.value, megjegyzes: f.megjegyzes.value, tetelek,
   };
@@ -512,6 +530,46 @@ function rowMatch(r, q) {
   const hay = [r.projekt, r.felelos, r.megjegyzes, ...r.tetelek.map(t => t.name + ' ' + t.code)].join(' ').toLowerCase();
   return q.split(/\s+/).every(w => hay.includes(w));
 }
+// ── Visszavétel részletekben: tételenként mennyi jött vissza és mikor (t.log)
+let retOpen = null, retDate = '';
+const retSel = new Map();     // tétel index → most visszahozott db
+const mmdd = d => d ? d.slice(5).replace('-', '.') + '.' : '';
+function logText(t) {
+  const log = (t.log || []).filter(l => l.n > 0);
+  if (log.length) return log.map(l => `${mmdd(l.d)} ${l.n} db`).join(' · ');
+  return t.vissza ? `${t.vissza} db (dátum nélkül)` : '';
+}
+function addReturn(t, n, d) {
+  if (!(n > 0)) return t;
+  const log = (t.log || []).map(l => ({ ...l })), last = log[log.length - 1];
+  if (last && last.d === d) last.n += n; else log.push({ n, d });
+  return { ...t, vissza: Math.min(t.qty, (t.vissza || 0) + n), log };
+}
+function retPanelHTML(r) {
+  const rowsH = r.tetelek.map((t, i) => {
+    const rem = remaining(t); if (!rem) return '';
+    const n = retSel.get(i) || 0;
+    return `<li class="rp-item ${n ? 'on' : ''}"><div class="pinfo"><div class="pname">${esc(t.name)}</div><div class="pmeta">${esc(t.code)} · kint: ${rem} db</div></div>
+      <button class="link-btn" type="button" data-act="rp-max" data-i="${i}">${n === rem ? 'egyik sem' : 'mind'}</button>
+      <div class="qty"><button type="button" data-act="rp-" data-i="${i}" aria-label="Kevesebb">−</button><output>${n}</output><button type="button" data-act="rp+" data-i="${i}" aria-label="Több">+</button></div></li>`;
+  }).join('');
+  const total = [...retSel.values()].reduce((s, n) => s + n, 0);
+  return `<div class="retpanel">
+    <div class="rp-head"><b>Visszavétel</b><label class="f">Dátum<input type="date" class="rp-date" value="${esc(retDate)}"></label></div>
+    <p class="muted">Állítsd be, melyik tételből hány db jött vissza most. A többi kint marad.</p>
+    <ul class="rp-list">${rowsH}</ul>
+    <div class="rp-foot"><button class="link-btn" type="button" data-act="rp-all">Mind vissza</button><span class="acts"><button class="link-btn" type="button" data-act="rp-cancel">Mégse</button>
+      <button class="btn small primary" type="button" data-act="rp-save" ${total ? '' : 'disabled'}>${total ? `${total} db visszavétele` : 'Válassz tételt'}</button></span></div>
+  </div>`;
+}
+function openRet(r, onlyIdx) {
+  retOpen = r.id; retSel.clear(); retDate = today();
+  if (onlyIdx != null) retSel.set(onlyIdx, remaining(r.tetelek[onlyIdx]));
+  renderLists();
+  const c = document.querySelector(`.kcard[data-id="${CSS.escape(r.id)}"] .retpanel`); if (c) c.scrollIntoView({ block: 'nearest' });
+}
+document.addEventListener('change', e => { if (e.target.classList && e.target.classList.contains('rp-date')) retDate = e.target.value; });
+
 function cardHTML(r, open) {
   const late = open && r.vissza_tervezett && r.vissza_tervezett < today();
   const partial = open && r.tetelek.some(t => t.vissza > 0);
@@ -519,19 +577,21 @@ function cardHTML(r, open) {
     : late ? `<span class="pill late">Lejárt: ${huDate(r.vissza_tervezett)}</span>`
     : partial ? '<span class="pill part">Részben vissza</span>' : '';
   const items = r.tetelek.map((t, i) => {
-    const rem = remaining(t), p = byId.get(t.id);
+    const rem = remaining(t), p = byId.get(t.id), hist = logText(t);
     return `<li class="kitem ${rem ? '' : 'done'}">${thumb(p)}
-      <div class="pinfo"><div class="pname">${esc(t.name)}</div><div class="pmeta">${esc(t.code)}</div></div>
-      <span class="kq">${rem && t.vissza ? `<b>${rem}</b> kint / ${t.qty}` : `<b>${t.qty}</b> db`}</span>
-      ${open && rem ? `<button class="btn small" type="button" data-act="ret" data-i="${i}">Vissza</button>` : ''}</li>`;
+      <div class="pinfo"><div class="pname">${esc(t.name)}</div><div class="pmeta">${esc(t.code)}</div>${hist ? `<div class="khist">↩ ${esc(hist)}</div>` : ''}</div>
+      <span class="kq">${rem && t.vissza ? `<b>${rem}</b> kint / ${t.qty}` : rem ? `<b>${t.qty}</b> db kint` : `<b>${t.qty}</b> db vissza`}</span>
+      ${open && rem && retOpen !== r.id ? `<button class="btn small" type="button" data-act="ret" data-i="${i}">Vissza</button>` : ''}</li>`;
   }).join('');
+  const panel = open && retOpen === r.id ? retPanelHTML(r) : '';
   const dates = [r.kivitel_napja && 'Kivitel: ' + huDate(r.kivitel_napja), r.vissza_tervezett && 'Tervezett vissza: ' + huDate(r.vissza_tervezett)].filter(Boolean).join(' · ');
   return `<article class="panel kcard" data-id="${r.id}">
     <div class="khead"><div><div class="ktitle">${esc(r.projekt)}</div><div class="muted">${[r.felelos && esc(r.felelos), dates].filter(Boolean).join(' · ')}</div></div>${pill}</div>
     ${r.megjegyzes ? `<div class="note">${esc(r.megjegyzes)}</div>` : ''}
     <ul class="kitems">${items}</ul>
-    <div class="kfoot"><div class="acts"><button class="btn small" type="button" data-act="edit">Szerkesztés</button><button class="link-btn danger" type="button" data-act="del">Törlés</button></div>
-      ${open ? '<button class="btn small ok" type="button" data-act="all">Minden visszahozva</button>' : '<button class="link-btn" type="button" data-act="reopen">Visszaállítás kint lévőre</button>'}</div>
+    ${panel}
+    <div class="kfoot"${panel ? ' hidden' : ''}><div class="acts"><button class="btn small" type="button" data-act="edit">Szerkesztés</button><button class="link-btn danger" type="button" data-act="del">Törlés</button></div>
+      ${open ? '<span class="acts"><button class="btn small" type="button" data-act="retopen">Visszavétel…</button><button class="btn small ok" type="button" data-act="all">Minden vissza</button></span>' : '<button class="link-btn" type="button" data-act="reopen">Visszaállítás kint lévőre</button>'}</div>
   </article>`;
 }
 function renderLists() {
@@ -570,24 +630,34 @@ async function onCardClick(e) {
   const card = b.closest('.kcard'), r = rows.find(x => x.id === card.dataset.id); if (!r) return;
   const act = b.dataset.act;
   if (act === 'edit') { startEdit(r); return; }
-  if (act === 'ret') {
-    const i = +b.dataset.i, t = r.tetelek[i], rem = remaining(t);
-    let n = rem;
-    if (rem > 1) {
-      const a = prompt(`${t.name}: hány db jött vissza? (kint: ${rem})`, String(rem));
-      if (a === null) return;
-      n = parseInt(a, 10);
-      if (!(n >= 1 && n <= rem)) { toast(`1 és ${rem} közötti számot adj meg.`); return; }
+  if (act === 'ret') { openRet(r, +b.dataset.i); return; }
+  if (act === 'retopen') { openRet(r); return; }
+  if (act.startsWith('rp')) {
+    const i = +b.dataset.i, rem = i >= 0 && r.tetelek[i] ? remaining(r.tetelek[i]) : 0, n = retSel.get(i) || 0;
+    const dEl = card.querySelector('.rp-date'); if (dEl) retDate = dEl.value;
+    if (act === 'rp+') { if (n < rem) retSel.set(i, n + 1); }
+    else if (act === 'rp-') { if (n > 0) retSel.set(i, n - 1); }
+    else if (act === 'rp-max') retSel.set(i, n === rem ? 0 : rem);
+    else if (act === 'rp-all') r.tetelek.forEach((t, j) => { if (remaining(t)) retSel.set(j, remaining(t)); });
+    else if (act === 'rp-cancel') { retOpen = null; retSel.clear(); }
+    else if (act === 'rp-save') {
+      const d = retDate || today();
+      const tetelek = r.tetelek.map((t, j) => addReturn(t, Math.min(retSel.get(j) || 0, remaining(t)), d));
+      const total = [...retSel.values()].reduce((s, x) => s + x, 0);
+      const all = tetelek.every(x => remaining(x) === 0);
+      retOpen = null; retSel.clear();
+      await patch(r, { tetelek, ...(all ? { visszahozva_at: new Date(d + 'T12:00:00').toISOString() } : {}) },
+        all ? `${r.projekt}: minden visszajött, lezárva` : `${r.projekt}: ${total} db visszavéve, a többi kint marad`);
+      return;
     }
-    const tetelek = r.tetelek.map((x, j) => j === i ? { ...x, vissza: (x.vissza || 0) + n } : x);
-    const all = tetelek.every(x => remaining(x) === 0);
-    await patch(r, { tetelek, ...(all ? { visszahozva_at: new Date().toISOString() } : {}) }, all ? `${r.projekt}: minden visszahozva` : `Visszavéve: ${t.name} (${n} db)`);
+    renderLists(); return;
   } else if (act === 'all') {
-    if (!confirm(`${r.projekt}: minden tétel visszajött?`)) return;
-    await patch(r, { tetelek: r.tetelek.map(x => ({ ...x, vissza: x.qty })), visszahozva_at: new Date().toISOString() }, `${r.projekt}: lezárva`);
+    if (!confirm(`${r.projekt}: minden kint lévő tétel visszajött ma?`)) return;
+    const d = today();
+    await patch(r, { tetelek: r.tetelek.map(x => addReturn(x, remaining(x), d)), visszahozva_at: new Date().toISOString() }, `${r.projekt}: lezárva`);
   } else if (act === 'reopen') {
-    if (!confirm(`${r.projekt} visszaállítása kint lévőre? (Minden tétel újra kint lesz.)`)) return;
-    await patch(r, { tetelek: r.tetelek.map(x => ({ ...x, vissza: 0 })), visszahozva_at: null }, 'Visszaállítva');
+    if (!confirm(`${r.projekt} visszaállítása kint lévőre? (Minden tétel újra kint lesz, a visszavételi előzmény törlődik.)`)) return;
+    await patch(r, { tetelek: r.tetelek.map(x => ({ ...x, vissza: 0, log: [] })), visszahozva_at: null }, 'Visszaállítva');
   } else if (act === 'del') {
     if (!confirm(`Biztosan törlöd ezt a kivitelt? (${r.projekt}) Ez nem vonható vissza.`)) return;
     try { await api('DELETE', '?id=' + encodeURIComponent(r.id)); rows = rows.filter(x => x !== r); renderLists(); renderPList(); renderSel(); toast('Törölve'); }
@@ -643,7 +713,7 @@ async function handleScan(text) {
       .sort((a, b) => (a.kivitel_napja || a.created_at || '').localeCompare(b.kivitel_napja || b.created_at || ''));
     if (!cands.length) { feedback(false); scanLog(`${p.code} ${p.name}: nincs kint egy projekten sem`, 'bad'); return; }
     const r = cands[0], i = r.tetelek.findIndex(t => t.id === p.id && remaining(t) > 0);
-    const tetelek = r.tetelek.map((x, j) => j === i ? { ...x, vissza: (x.vissza || 0) + 1 } : x);
+    const tetelek = r.tetelek.map((x, j) => j === i ? addReturn(x, 1, today()) : x);
     const all = tetelek.every(x => remaining(x) === 0);
     try {
       const upd = await api('PATCH', '?id=' + encodeURIComponent(r.id), { tetelek, ...(all ? { visszahozva_at: new Date().toISOString() } : {}) });

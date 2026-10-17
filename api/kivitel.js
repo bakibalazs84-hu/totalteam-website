@@ -38,6 +38,11 @@ function clean(body, partial) {
       name: String(t.name || '').slice(0, 200),
       qty: Math.max(1, Math.min(9999, parseInt(t.qty, 10) || 1)),
       vissza: Math.max(0, Math.min(9999, parseInt(t.vissza, 10) || 0)),
+      // Visszahozások története: [{ n: darab, d: 'ÉÉÉÉ-HH-NN' }]
+      log: Array.isArray(t.log) ? t.log.slice(0, 200).map(l => ({
+        n: Math.max(1, Math.min(9999, parseInt(l && l.n, 10) || 1)),
+        d: /^\d{4}-\d{2}-\d{2}$/.test(String(l && l.d)) ? String(l.d) : new Date().toISOString().slice(0, 10),
+      })) : [],
     }));
   }
   if (!partial) {
