@@ -563,7 +563,6 @@ function retPanelHTML(r) {
     const rem = remaining(t); if (!rem) return '';
     const n = retSel.get(i) || 0;
     return `<li class="rp-item ${n ? 'on' : ''}"><div class="pinfo"><div class="pname">${esc(t.name)}</div><div class="pmeta">${esc(t.code)} · kint: ${rem} db</div></div>
-      <button class="link-btn" type="button" data-act="rp-max" data-i="${i}">${n === rem ? 'egyik sem' : 'mind'}</button>
       <div class="qty"><button type="button" data-act="rp-" data-i="${i}" aria-label="Kevesebb">−</button><output>${n}</output><button type="button" data-act="rp+" data-i="${i}" aria-label="Több">+</button></div></li>`;
   }).join('');
   const total = [...retSel.values()].reduce((s, n) => s + n, 0);
@@ -571,7 +570,7 @@ function retPanelHTML(r) {
     <div class="rp-head"><b>Visszavétel</b><label class="f">Dátum<input type="date" class="rp-date" value="${esc(retDate)}"></label></div>
     <p class="muted">Alapból minden kint lévő darab be van jelölve. Ami még kint marad, annál csökkentsd a számot.</p>
     <ul class="rp-list">${rowsH}</ul>
-    <div class="rp-foot"><span class="acts"><button class="link-btn" type="button" data-act="rp-all">Mind</button><button class="link-btn" type="button" data-act="rp-none">Egyik sem</button></span><span class="acts"><button class="link-btn" type="button" data-act="rp-cancel">Mégse</button>
+    <div class="rp-foot"><span></span><span class="acts"><button class="link-btn" type="button" data-act="rp-cancel">Mégse</button>
       <button class="btn small primary" type="button" data-act="rp-save" ${total ? '' : 'disabled'}>${total ? `${total} db visszavétele` : 'Válassz tételt'}</button></span></div>
   </div>`;
 }
