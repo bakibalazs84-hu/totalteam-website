@@ -63,7 +63,7 @@ h2 { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
 input[type=text], input[type=search], input[type=password], input[type=date], textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); font-size: 13px; }
 input:focus, textarea:focus { outline: none; border-color: var(--accent); }
 label.f { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--fg-muted); }
-.err { background: var(--bad-bg); color: var(--bad); padding: 10px 14px; border-radius: var(--radius); font-size: 13px; }
+.err { background: var(--bad-bg); color: var(--bad); padding: 10px 14px; border-radius: var(--radius); font-size: 13px; white-space: pre-line; }
 
 /* Belépés */
 .login { max-width: 360px; margin: 12vh auto 0; padding: 28px; display: flex; flex-direction: column; gap: 14px; }
@@ -131,6 +131,14 @@ table.sum td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertic
 table.sum td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .sum-wrap { overflow-x: auto; }
 
+/* Szerkesztés */
+.edit-banner { display: flex; align-items: center; gap: 8px; background: var(--accent-bg); color: var(--fg); border: 1px solid var(--accent); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; }
+.edit-banner b { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.sel-panel.editing { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-bg); }
+.sel-item .qcol { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
+.sel-item .qcol small { font-size: 10px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .05em; }
+.kfoot .acts { display: flex; gap: 14px; align-items: center; }
+
 /* QR beolvasás */
 .scan-open { display: inline-flex; align-items: center; gap: 6px; }
 .scan-overlay { position: fixed; inset: 0; z-index: 300; background: var(--overlay); display: flex; align-items: center; justify-content: center; padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px)); }
@@ -164,7 +172,17 @@ table.sum td.num { text-align: right; font-variant-numeric: tabular-nums; font-w
   .tabs { order: 3; width: 100%; }
   .tab { flex: 1; padding: 6px 8px; }
 }
-@media (max-width: 480px) { .form2 { grid-template-columns: 1fr; } .logo small { display: none; } }
+@media (max-width: 480px) {
+  .form2 { grid-template-columns: 1fr; } .logo small { display: none; }
+  .head-right { flex-wrap: wrap; gap: 8px 12px; }
+  .sel-item { flex-wrap: wrap; row-gap: 8px; }
+  .sel-item .pinfo { flex: 1 1 calc(100% - 100px); }
+  .sel-item .qcol { flex-direction: row; gap: 6px; }
+  .sel-item { position: relative; padding-right: 30px; }
+  .sel-item .x { position: absolute; top: 4px; right: 2px; }
+  .cards { grid-template-columns: minmax(0, 1fr); }
+}
+html, body { overflow-x: hidden; }
 </style>
 </head>
 <body>
@@ -210,7 +228,8 @@ table.sum td.num { text-align: right; font-variant-numeric: tabular-nums; font-w
           <div class="more" id="pmore" hidden><button class="btn small" id="pmoreBtn" type="button">Továbbiak</button></div>
         </div>
         <form class="panel sel-panel" id="newForm" novalidate>
-          <div><h2>Kivitel rögzítése</h2><p class="muted" id="selSum">Válassz tételeket a bal oldali listából.</p></div>
+          <div class="edit-banner" id="editBanner" hidden>Szerkesztés: <b id="editName"></b><button class="link-btn" id="editCancel" type="button">Mégse</button></div>
+          <div><h2 id="formTitle">Kivitel rögzítése</h2><p class="muted" id="selSum">Válassz tételeket a bal oldali listából.</p></div>
           <ul class="sel-list" id="selList"></ul>
           <div class="form2">
             <label class="f full">Projekt *<input type="text" name="projekt" list="projektList" required autocomplete="off" placeholder="pl. XY reklám – Telekom"></label>
@@ -373,32 +392,68 @@ $('pmoreBtn').onclick = () => { pshown += 60; renderPList(); };
 $('plist').addEventListener('click', e => {
   const r = e.target.closest('.prow'); if (!r) return;
   const id = r.dataset.id;
-  sel.has(id) ? sel.delete(id) : sel.set(id, 1);
+  if (sel.has(id)) { sel.delete(id); selRet.delete(id); } else sel.set(id, 1);
   renderPList(); renderSel();
 });
 
 // ── Új kivitel: kiválasztott tételek + űrlap
+// Szerkesztés: a meglévő kivitel betöltődik ebbe az űrlapba (editing = a kivitel sora)
+let editing = null;
+const selRet = new Map();     // id → visszahozott db (csak szerkesztésnél)
+const prodOf = id => byId.get(id) || (editing && (editing.tetelek.find(t => t.id === id))) || { id, code: id, name: id, qty: 9999 };
 function renderSel() {
-  const out = outMap(), ids = [...sel.keys()];
+  const out = outMap(editing && editing.id), ids = [...sel.keys()];
   $('selList').innerHTML = ids.map(id => {
-    const p = byId.get(id), n = sel.get(id), free = p.qty - (out.get(id) || 0), over = n > free;
-    return `<li class="sel-item ${over ? 'over' : ''}" data-id="${id}">${thumb(p)}
-      <div class="pinfo"><div class="pname">${esc(p.name)}</div><div class="pmeta">${p.code} · ${over ? `<b>csak ${Math.max(0, free)} db van bent</b>` : `bent: ${free} / ${p.qty} db`}</div></div>
-      <div class="qty"><button type="button" data-a="-" aria-label="Kevesebb">−</button><output>${n}</output><button type="button" data-a="+" aria-label="Több">+</button></div>
+    const p = prodOf(id), n = sel.get(id), v = selRet.get(id) || 0, stock = byId.has(id) ? p.qty : n;
+    const kint = n - v, free = stock - (out.get(id) || 0), over = kint > free;
+    const meta = !byId.has(id) ? 'már nincs a raktárlistában' : over ? `<b>csak ${Math.max(0, free)} db van bent</b>` : `bent: ${free} / ${stock} db`;
+    return `<li class="sel-item ${over ? 'over' : ''}" data-id="${esc(id)}">${thumb(byId.get(id))}
+      <div class="pinfo"><div class="pname">${esc(p.name)}</div><div class="pmeta">${esc(p.code)} · ${meta}</div></div>
+      <div class="qcol">${editing ? '<small>kivitt</small>' : ''}<div class="qty"><button type="button" data-a="-" aria-label="Kevesebb">−</button><output>${n}</output><button type="button" data-a="+" aria-label="Több">+</button></div></div>
+      ${editing ? `<div class="qcol"><small>vissza</small><div class="qty"><button type="button" data-a="v-" aria-label="Kevesebb vissza">−</button><output>${v}</output><button type="button" data-a="v+" aria-label="Több vissza">+</button></div></div>` : ''}
       <button type="button" class="x" data-a="x" aria-label="Eltávolítás">✕</button></li>`;
   }).join('');
   const total = ids.reduce((s, id) => s + sel.get(id), 0);
-  $('selSum').textContent = ids.length ? `${ids.length} tétel, összesen ${total} db` : 'Válassz tételeket a bal oldali listából.';
+  const back = ids.reduce((s, id) => s + (selRet.get(id) || 0), 0);
+  $('selSum').textContent = !ids.length ? (editing ? 'Nincs tétel – adj hozzá a bal oldali listából.' : 'Válassz tételeket a bal oldali listából.')
+    : `${ids.length} tétel, összesen ${total} db${editing && back ? `, ebből ${back} db visszahozva` : ''}`;
   $('saveBtn').disabled = !ids.length;
 }
 $('selList').addEventListener('click', e => {
   const b = e.target.closest('button[data-a]'); if (!b) return;
-  const id = b.closest('.sel-item').dataset.id, p = byId.get(id);
-  if (b.dataset.a === '+') sel.set(id, Math.min(p.qty, sel.get(id) + 1));
-  else if (b.dataset.a === '-') sel.set(id, Math.max(1, sel.get(id) - 1));
-  else sel.delete(id);
+  const id = b.closest('.sel-item').dataset.id, p = prodOf(id), max = byId.has(id) ? p.qty : 9999;
+  const n = sel.get(id), v = selRet.get(id) || 0;
+  if (b.dataset.a === '+') sel.set(id, Math.min(max, n + 1));
+  else if (b.dataset.a === '-') { if (n > Math.max(1, v)) sel.set(id, n - 1); else if (v >= n && n > 1) toast('Előbb a visszahozott darabszámot csökkentsd.'); }
+  else if (b.dataset.a === 'v+') { if (v < n) selRet.set(id, v + 1); }
+  else if (b.dataset.a === 'v-') { if (v > 0) selRet.set(id, v - 1); }
+  else { sel.delete(id); selRet.delete(id); }
   renderSel(); renderPList();
 });
+
+function resetForm() {
+  const f = nf.elements;
+  sel.clear(); selRet.clear(); editing = null;
+  f.projekt.value = ''; f.megjegyzes.value = ''; f.vissza_tervezett.value = ''; f.kivitel_napja.value = today();
+  try { const fl = localStorage.getItem('tt_felelos'); f.felelos.value = fl || ''; } catch (e) {}
+  $('editBanner').hidden = true; $('formTitle').textContent = 'Kivitel rögzítése'; $('saveBtn').textContent = 'Kivitel mentése';
+  nf.classList.remove('editing'); showErr($('newErr'));
+  renderSel(); renderPList();
+}
+function startEdit(r) {
+  if ((sel.size && !editing) && !confirm('Az új kivitelhez kiválasztott tételek elvesznek. Folytatod?')) return;
+  resetForm();
+  editing = r;
+  r.tetelek.forEach(t => { sel.set(t.id, (sel.get(t.id) || 0) + t.qty); selRet.set(t.id, (selRet.get(t.id) || 0) + (t.vissza || 0)); });
+  const f = nf.elements;
+  f.projekt.value = r.projekt || ''; f.felelos.value = r.felelos || ''; f.megjegyzes.value = r.megjegyzes || '';
+  f.kivitel_napja.value = r.kivitel_napja || ''; f.vissza_tervezett.value = r.vissza_tervezett || '';
+  $('editName').textContent = r.projekt; $('editBanner').hidden = false;
+  $('formTitle').textContent = 'Kivitel szerkesztése'; $('saveBtn').textContent = 'Módosítás mentése';
+  nf.classList.add('editing');
+  showTab('uj'); renderSel(); renderPList();
+  window.scrollTo(0, 0); if (window.innerWidth <= 820) nf.scrollIntoView({ block: 'start' });
+}
 function fillDatalists() {
   const uniq = k => [...new Set(rows.map(r => r[k]).filter(Boolean))].slice(0, 50);
   $('projektList').innerHTML = uniq('projekt').map(v => `<option value="${esc(v)}">`).join('');
@@ -412,23 +467,44 @@ nf.addEventListener('submit', async e => {
   const f = nf.elements;
   if (!f.projekt.value.trim()) { showErr($('newErr'), 'Add meg a projekt nevét.'); f.projekt.focus(); return; }
   if (f.vissza_tervezett.value && f.kivitel_napja.value && f.vissza_tervezett.value < f.kivitel_napja.value) { showErr($('newErr'), 'A tervezett visszahozás nem lehet a kivitel előtt.'); return; }
-  const out = outMap(), overs = [...sel].filter(([id, n]) => n > byId.get(id).qty - (out.get(id) || 0));
-  if (overs.length && !confirm(`${overs.length} tételből több menne ki, mint amennyi a nyilvántartás szerint bent van. Mented így is?`)) return;
+  const out = outMap(editing && editing.id);
+  const overs = [...sel].filter(([id, n]) => byId.has(id) && n - (selRet.get(id) || 0) > byId.get(id).qty - (out.get(id) || 0));
+  if (overs.length) {
+    const lines = overs.map(([id, n]) => {
+      const p = byId.get(id), kint = n - (selRet.get(id) || 0), free = Math.max(0, p.qty - (out.get(id) || 0));
+      const where = rows.filter(isOpen).filter(r => r !== editing && r.tetelek.some(t => t.id === id && remaining(t) > 0))
+        .map(r => `${r.projekt} (${r.tetelek.filter(t => t.id === id).reduce((s, t) => s + remaining(t), 0)} db)`);
+      return `• ${p.code} ${p.name}: ${kint} db menne ki, bent csak ${free} db (készlet ${p.qty})${where.length ? `\n    már kint: ${where.join(', ')}` : ''}`;
+    });
+    showErr($('newErr'), 'Több menne ki, mint ami bent van:\n' + lines.join('\n'));
+    if (!confirm(`Ezekből több menne ki, mint ami a nyilvántartás szerint bent van:\n\n${lines.join('\n')}\n\nMented így is?`)) return;
+    showErr($('newErr'));
+  }
+  const tetelek = [...sel].map(([id, qty]) => { const p = prodOf(id); return { id, code: p.code, name: p.name, qty, vissza: Math.min(qty, selRet.get(id) || 0) }; });
   const body = {
-    projekt: f.projekt.value, felelos: f.felelos.value, kivitel_napja: f.kivitel_napja.value, vissza_tervezett: f.vissza_tervezett.value, megjegyzes: f.megjegyzes.value,
-    tetelek: [...sel].map(([id, qty]) => { const p = byId.get(id); return { id, code: p.code, name: p.name, qty, vissza: 0 }; }),
+    projekt: f.projekt.value, felelos: f.felelos.value, kivitel_napja: f.kivitel_napja.value, vissza_tervezett: f.vissza_tervezett.value, megjegyzes: f.megjegyzes.value, tetelek,
   };
   const btn = $('saveBtn'); btn.disabled = true; btn.textContent = 'Mentés…';
   try {
-    const row = await api('POST', '', body);
-    rows.unshift(row);
-    try { localStorage.setItem('tt_felelos', f.felelos.value); } catch (e) {}
-    sel.clear(); f.projekt.value = ''; f.megjegyzes.value = ''; f.vissza_tervezett.value = ''; f.kivitel_napja.value = today();
-    renderSel(); renderPList(); renderLists();
-    toast(`Mentve: ${row.projekt} – ${row.tetelek.length} tétel`);
+    if (editing) {
+      const allBack = tetelek.every(t => t.vissza >= t.qty);
+      body.visszahozva_at = allBack ? (editing.visszahozva_at || new Date().toISOString()) : null;
+      const upd = await api('PATCH', '?id=' + encodeURIComponent(editing.id), body);
+      Object.assign(editing, upd);
+      const name = editing.projekt, wasOpen = isOpen(editing);
+      resetForm(); renderLists(); showTab(wasOpen ? 'kint' : 'elozmeny');
+      toast(`Módosítva: ${name}`);
+    } else {
+      const row = await api('POST', '', body);
+      rows.unshift(row);
+      try { localStorage.setItem('tt_felelos', f.felelos.value); } catch (e) {}
+      resetForm(); renderLists();
+      toast(`Mentve: ${row.projekt} – ${row.tetelek.length} tétel`);
+    }
   } catch (err) { showErr($('newErr'), err.message); }
-  finally { btn.textContent = 'Kivitel mentése'; renderSel(); }
+  finally { btn.textContent = editing ? 'Módosítás mentése' : 'Kivitel mentése'; renderSel(); }
 });
+$('editCancel').onclick = () => { const wasOpen = editing && isOpen(editing); resetForm(); showTab(wasOpen === false ? 'elozmeny' : 'kint'); };
 
 // ── Kint lévő / előzmények
 function rowMatch(r, q) {
@@ -454,7 +530,7 @@ function cardHTML(r, open) {
     <div class="khead"><div><div class="ktitle">${esc(r.projekt)}</div><div class="muted">${[r.felelos && esc(r.felelos), dates].filter(Boolean).join(' · ')}</div></div>${pill}</div>
     ${r.megjegyzes ? `<div class="note">${esc(r.megjegyzes)}</div>` : ''}
     <ul class="kitems">${items}</ul>
-    <div class="kfoot"><button class="link-btn danger" type="button" data-act="del">Törlés</button>
+    <div class="kfoot"><div class="acts"><button class="btn small" type="button" data-act="edit">Szerkesztés</button><button class="link-btn danger" type="button" data-act="del">Törlés</button></div>
       ${open ? '<button class="btn small ok" type="button" data-act="all">Minden visszahozva</button>' : '<button class="link-btn" type="button" data-act="reopen">Visszaállítás kint lévőre</button>'}</div>
   </article>`;
 }
@@ -493,6 +569,7 @@ async function onCardClick(e) {
   const b = e.target.closest('button[data-act]'); if (!b) return;
   const card = b.closest('.kcard'), r = rows.find(x => x.id === card.dataset.id); if (!r) return;
   const act = b.dataset.act;
+  if (act === 'edit') { startEdit(r); return; }
   if (act === 'ret') {
     const i = +b.dataset.i, t = r.tetelek[i], rem = remaining(t);
     let n = rem;
