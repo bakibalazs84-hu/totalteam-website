@@ -293,6 +293,7 @@ html, body { overflow-x: hidden; }
           <div class="edit-banner" id="editBanner" hidden>Szerkesztés: <b id="editName"></b><button class="link-btn" id="editCancel" type="button">Mégse</button></div>
           <div><h2 id="formTitle">Kivitel rögzítése</h2><p class="muted" id="selSum">Válassz tételeket a bal oldali listából.</p></div>
           <ul class="sel-list" id="selList"></ul>
+          <button class="link-btn" id="selPrint" type="button" hidden style="align-self:flex-start">🖨 Összekészítési lista nyomtatása (képekkel)</button>
           <div class="form2">
             <label class="f full">Projekt *<input type="text" name="projekt" list="projektList" required autocomplete="off" placeholder="pl. XY reklám – Telekom"></label>
             <datalist id="projektList"></datalist>
@@ -511,6 +512,7 @@ const selRet = new Map();     // id → visszahozott db (csak szerkesztésnél)
 const prodOf = id => byId.get(id) || (editing && (editing.tetelek.find(t => t.id === id))) || { id, code: id, name: id, qty: 9999 };
 function renderSel() {
   const out = outMap(editing && editing.id), ids = [...sel.keys()];
+  $('selPrint').hidden = !ids.length;
   $('selList').innerHTML = ids.map(id => {
     const p = prodOf(id), n = sel.get(id), v = selRet.get(id) || 0, stock = byId.has(id) ? p.qty : n;
     const kint = n - v, free = stock - (out.get(id) || 0), over = kint > free;
@@ -689,7 +691,7 @@ function cardHTML(r, open) {
     ${r.megjegyzes ? `<div class="note">${esc(r.megjegyzes)}</div>` : ''}
     <ul class="kitems">${items}</ul>
     ${panel}
-    <div class="kfoot"${panel ? ' hidden' : ''}><div class="acts"><button class="btn small" type="button" data-act="edit">Szerkesztés</button><button class="link-btn danger" type="button" data-act="del">Törlés</button></div>
+    <div class="kfoot"${panel ? ' hidden' : ''}><div class="acts"><button class="btn small" type="button" data-act="edit">Szerkesztés</button><button class="btn small" type="button" data-act="print" title="Nyomtatható lista képekkel">Nyomtatás</button><button class="link-btn danger" type="button" data-act="del">Törlés</button></div>
       ${open ? '<span class="acts"><button class="btn small" type="button" data-act="retopen">Visszavétel…</button><button class="btn small ok" type="button" data-act="all">Minden vissza</button></span>' : '<button class="link-btn" type="button" data-act="reopen">Visszaállítás kint lévőre</button>'}</div>
   </article>`;
 }
@@ -730,6 +732,7 @@ async function onCardClick(e) {
   const card = b.closest('.kcard'), r = rows.find(x => x.id === card.dataset.id); if (!r) return;
   const act = b.dataset.act;
   if (act === 'edit') { startEdit(r); return; }
+  if (act === 'print') { printKivitel(r); return; }
   if (act === 'ret') { openRet(r, +b.dataset.i); return; }
   if (act === 'retopen') { openRet(r); return; }
   if (act.startsWith('rp')) {
@@ -1039,6 +1042,28 @@ $('flist').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); fogSave(e.target.closest('.prow').dataset.id, true, e.target.value.trim()); }
   else if (e.key === 'Escape') { fEdit = null; renderFog(); }
 });
+
+// ── Nyomtatható lista képekkel (print-list.js)
+const printItem = (id, code, name, qty, note) => { const p = byId.get(id), u = p && p.imgs && p.imgs[0]; return { img: u ? webUrl(u) : '', orig: u || '', code: code || (p && p.code), name: name || (p && p.name), dims: p && p.dims, qty, note }; };
+function printKivitel(r) {
+  printList({
+    title: 'Kivitel – ' + r.projekt, subtitle: 'Total Team Raktár · saját projekt',
+    meta: [['Projekt', r.projekt], ['Ki vitte ki', r.felelos], ['Kivitel napja', huDate(r.kivitel_napja)], ['Tervezett visszahozás', huDate(r.vissza_tervezett)],
+      ['Állapot', !isOpen(r) ? 'Visszahozva ' + huDate(r.visszahozva_at) : r.tetelek.some(t => t.vissza) ? 'Részben vissza' : 'Kint']],
+    items: r.tetelek.map(t => printItem(t.id, t.code, t.name, t.qty, t.vissza ? `vissza: ${t.vissza} db${logText(t) ? ' (' + logText(t) + ')' : ''} · kint: ${remaining(t)} db` : '')),
+    note: r.megjegyzes, check: true, sign: ['Kiadta', 'Átvette'],
+  });
+}
+$('selPrint').onclick = () => {
+  const f = $('newForm').elements;
+  printList({
+    title: 'Összekészítési lista' + (f.projekt.value.trim() ? ' – ' + f.projekt.value.trim() : ''), subtitle: 'Total Team Raktár · saját projekt',
+    meta: [['Projekt', f.projekt.value.trim()], ['Ki viszi ki', f.felelos.value.trim()], ['Kivitel napja', huDate(f.kivitel_napja.value)], ['Tervezett visszahozás', huDate(f.vissza_tervezett.value)]],
+    items: [...sel.keys()].map(id => printItem(id, null, null, sel.get(id))),
+    note: f.megjegyzes.value.trim(), check: true, sign: ['Kiadta', 'Átvette'],
+  });
+};
 </script>
+<script src="/print-list.js" defer></script>
 </body>
 </html>
