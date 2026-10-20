@@ -172,6 +172,20 @@ label.f { display: flex; flex-direction: column; gap: 3px; font-size: 11px; colo
 .kq { font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--fg-muted); }
 .kq b { color: var(--fg); }
 .kfoot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bcards { grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); }
+.bcard.st-uj { border-left: 4px solid var(--accent); }
+.bitems { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.bitem { display: flex; flex-direction: column; gap: 4px; font-size: 12px; min-width: 0; }
+.bitem .thumb { width: 100%; height: auto; aspect-ratio: 3 / 4; border-radius: 6px; position: relative; }
+.bitem .bq { position: absolute; top: 6px; right: 6px; background: var(--fg); color: var(--bg); font-weight: 700; border-radius: 12px; padding: 0 8px; font-size: 12px; pointer-events: none; }
+.bitem .bwrap { position: relative; }
+.bitem .pname { font-size: 12px; line-height: 1.25; }
+.bitem .warn { color: var(--bad); font-size: 11px; font-weight: 600; }
+.bmeta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; }
+.bmeta span b { color: var(--fg-muted); font-weight: 500; }
+.bmeta a { color: inherit; }
+.bstat { font: inherit; font-size: 12px; padding: 4px 6px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.pill.new { background: var(--accent-bg); color: var(--accent); }
 .note { font-size: 12px; color: var(--fg-muted); white-space: pre-wrap; background: var(--bg); padding: 6px 10px; border-radius: var(--radius); }
 table.sum { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.sum th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--fg-muted); font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--border); }
@@ -232,7 +246,9 @@ table.sum td.num { text-align: right; font-variant-numeric: tabular-nums; font-w
   .cards { grid-template-columns: minmax(0, 1fr); }
   .head-right { margin-left: 0; width: 100%; justify-content: space-between; }
   .tabs { order: 3; width: 100%; }
-  .tab { flex: 1; padding: 6px 8px; }
+  .tab { flex: 1 0 auto; padding: 6px 10px; }
+  .tabs { overflow-x: auto; scrollbar-width: none; justify-content: flex-start; }
+  .tabs::-webkit-scrollbar { display: none; }
 }
 @media (max-width: 480px) {
   .form2 { grid-template-columns: 1fr; } .logo small { display: none; }
@@ -264,6 +280,7 @@ html, body { overflow-x: hidden; }
     <div class="header-inner">
       <a class="logo" href="/raktar.html" title="Raktárkészlet" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit"><img src="/img/total-team-logo-clean.png" alt="Total Team" width="49" height="38" style="height:38px;width:auto;display:block">Raktár <small>Kivitelek</small></a>
       <nav class="tabs" role="tablist">
+        <button class="tab" data-tab="bejovo" type="button">Bejövő<span class="n" id="nBej"></span></button>
         <button class="tab active" data-tab="uj" type="button">Új kivitel</button>
         <button class="tab" data-tab="kint" type="button">Kint lévő<span class="n" id="nKint"></span></button>
         <button class="tab" data-tab="elozmeny" type="button">Előzmények</button>
@@ -279,6 +296,16 @@ html, body { overflow-x: hidden; }
 
   <main class="wrap">
     <div class="err" id="appErr" hidden style="margin-bottom:14px"></div>
+
+    <!-- Bejövő: a raktár oldalról beküldött bérlési igények -->
+    <section id="tab-bejovo" hidden>
+      <div class="toolbar">
+        <input type="search" id="bq" placeholder="Keresés: név, cég, tétel…" autocomplete="off">
+        <div class="seg" id="bmode"><button type="button" data-m="nyitott" class="active">Nyitott</button><button type="button" data-m="mind">Mind</button></div>
+        <button class="btn small" id="breload" type="button">Frissítés</button>
+      </div>
+      <div class="cards bcards" id="bejCards"></div>
+    </section>
 
     <!-- Új kivitel -->
     <section id="tab-uj">
@@ -378,7 +405,8 @@ try { pass = sessionStorage.getItem('tt_admin') || ''; } catch (e) {}
 let PRODUCTS = [], byId = new Map(), rows = [];
 let sel = new Map();          // id → qty (új kivitel)
 let pcat = 'Minden', pshown = 60, kmode = 'proj';
-let KEZI = {}, fmode = 'mind', fshown = 80, fEdit = null;   // kézi foglalások: id → ok
+let KEZI = {}, fmode = 'mind', fshown = 80, fEdit = null;
+let BEJ = [], bmode = 'nyitott', fromBej = null;   // bejövő bérlési igények; fromBej: ebből készül épp kivitel   // kézi foglalások: id → ok
 
 let toastT;
 function toast(msg) {
@@ -437,9 +465,9 @@ $('logout').onclick = logout;
 async function start() {
   $('loginView').hidden = true; $('appView').hidden = false;
   try { await Promise.all([loadProducts(), refresh()]); } catch (e) { showErr($('appErr'), e.message); }
-  renderPicker(); renderSel(); renderLists();
+  renderPicker(); renderSel(); renderLists(); renderBej();
 }
-async function refresh() { rows = (await api('GET')) || []; rows.forEach(r => { r.tetelek = r.tetelek || []; }); renderLists(); loadKezi(); }
+async function refresh() { rows = (await api('GET')) || []; rows.forEach(r => { r.tetelek = r.tetelek || []; }); renderLists(); loadKezi(); loadBej(); }
 async function loadKezi() {
   try {
     // Háttérben töltődik, hogy a lista ne várjon rá (a szerver néha lassan ébred)
@@ -448,7 +476,7 @@ async function loadKezi() {
     clearTimeout(tm);
     const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Hiba');
     KEZI = d.kezi || {};
-    if (PRODUCTS.length) { renderFog(); renderPList(); }
+    if (PRODUCTS.length) { renderFog(); renderPList(); renderBej(); }
   } catch (e) { showErr($('appErr'), 'Foglaltság betöltése nem sikerült: ' + (e.name === 'AbortError' ? 'időtúllépés' : e.message)); }
 }
 
@@ -456,7 +484,7 @@ async function loadKezi() {
 document.querySelector('.tabs').addEventListener('click', e => {
   const b = e.target.closest('.tab'); if (!b) return;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === b));
-  ['uj', 'kint', 'elozmeny', 'fog'].forEach(k => { $('tab-' + k).hidden = k !== b.dataset.tab; });
+  ['bejovo', 'uj', 'kint', 'elozmeny', 'fog'].forEach(k => { $('tab-' + k).hidden = k !== b.dataset.tab; });
   window.scrollTo(0, 0);
 });
 
@@ -543,7 +571,7 @@ $('selList').addEventListener('click', e => {
 
 function resetForm() {
   const f = nf.elements;
-  sel.clear(); selRet.clear(); editing = null;
+  sel.clear(); selRet.clear(); editing = null; fromBej = null;
   f.projekt.value = ''; f.megjegyzes.value = ''; f.vissza_tervezett.value = ''; f.kivitel_napja.value = today();
   try { const fl = localStorage.getItem('tt_felelos'); f.felelos.value = fl || ''; } catch (e) {}
   $('editBanner').hidden = true; $('formTitle').textContent = 'Kivitel rögzítése'; $('saveBtn').textContent = 'Kivitel mentése';
@@ -615,6 +643,7 @@ nf.addEventListener('submit', async e => {
     } else {
       const row = await api('POST', '', body);
       rows.unshift(row);
+      if (fromBej) { bejSet(fromBej, 'kiadva'); fromBej = null; }
       try { localStorage.setItem('tt_felelos', f.felelos.value); } catch (e) {}
       resetForm(); renderLists();
       toast(`Mentve: ${row.projekt} – ${row.tetelek.length} tétel`);
@@ -778,7 +807,7 @@ const scanCanvas = document.createElement('canvas'), scanCtx = scanCanvas.getCon
 
 function showTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
-  ['uj', 'kint', 'elozmeny', 'fog'].forEach(k => { $('tab-' + k).hidden = k !== name; });
+  ['bejovo', 'uj', 'kint', 'elozmeny', 'fog'].forEach(k => { $('tab-' + k).hidden = k !== name; });
 }
 function codeFromText(text) {
   let s = String(text || '').trim();
@@ -1063,6 +1092,82 @@ $('selPrint').onclick = () => {
     note: f.megjegyzes.value.trim(), check: true, sign: ['Kiadta', 'Átvette'],
   });
 };
+
+// ── Bejövő: bérlési igények a raktár oldalról (api/ajanlat.js)
+const BST = { uj: 'Új', ajanlat: 'Ajánlat elküldve', kiadva: 'Kiadva', lezart: 'Lezárva' };
+async function loadBej() {
+  try {
+    const r = await fetch('/api/ajanlat', { headers: { 'x-admin-pass': pass }, cache: 'no-store' });
+    const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Hiba');
+    BEJ = d || []; renderBej();
+  } catch (e) { $('bejCards').innerHTML = `<div class="empty">A bejövő igények betöltése nem sikerült: ${esc(e.message)}</div>`; }
+}
+function renderBej() {
+  const nUj = BEJ.filter(b => b.statusz === 'uj').length;
+  $('nBej').textContent = nUj || '';
+  const q = $('bq').value.trim().toLowerCase(), out = outMap();
+  const list = BEJ.filter(b => (bmode === 'mind' || b.statusz === 'uj' || b.statusz === 'ajanlat')
+    && (!q || [b.nev, b.ceg, b.tel, b.megjegyzes, ...(b.tetelek || []).map(t => t.name + ' ' + t.code)].join(' ').toLowerCase().includes(q)));
+  $('bejCards').innerHTML = list.length ? list.map(b => {
+    const items = b.tetelek || [], total = items.reduce((s, t) => s + t.qty, 0);
+    const per = (b.tol || b.ig) ? `${huDate(b.tol) || '?'} – ${huDate(b.ig) || '?'}` : '';
+    const when = new Date(b.created_at).toLocaleString('hu-HU', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    return `<article class="panel kcard bcard st-${b.statusz}" data-id="${esc(b.id)}">
+      <div class="khead"><div><div class="ktitle">${esc(b.ceg || b.nev)}</div><div class="muted">Beérkezett: ${esc(when)} · ${items.length} tétel, ${total} db</div></div>
+        <span class="pill ${b.statusz === 'uj' ? 'new' : b.statusz === 'ajanlat' ? 'part' : 'ok'}">${BST[b.statusz] || b.statusz}</span></div>
+      <div class="bmeta"><span><b>Név:</b> ${esc(b.nev)}</span>${b.tel ? `<span><b>Tel:</b> <a href="tel:${esc(b.tel.replace(/\s+/g, ''))}">${esc(b.tel)}</a></span>` : ''}${per ? `<span><b>Időszak:</b> ${esc(per)}</span>` : ''}</div>
+      ${b.megjegyzes ? `<div class="note">${esc(b.megjegyzes)}</div>` : ''}
+      <ul class="bitems">${items.map(t => {
+        const p = byId.get(t.id), o = out.get(t.id) || 0, free = p ? p.qty - o : null, kezi = t.id in KEZI;
+        const warn = !p ? 'már nincs a raktárban' : kezi ? 'kézzel foglalt' : free < t.qty ? (free > 0 ? `csak ${free} db szabad` : 'jelenleg kint van') : '';
+        return `<li class="bitem"><div class="bwrap">${thumb(p)}<span class="bq">${t.qty} db</span></div><div class="pname">${esc(t.name)}</div><div class="pmeta">${esc(t.code)}</div>${warn ? `<div class="warn">${warn}</div>` : ''}</li>`;
+      }).join('')}</ul>
+      <div class="kfoot"><div class="acts">
+          <select class="bstat" data-bact="st" aria-label="Státusz">${Object.entries(BST).map(([k, v]) => `<option value="${k}"${k === b.statusz ? ' selected' : ''}>${v}</option>`).join('')}</select>
+          <a class="link-btn" href="/ajanlat.html?id=${encodeURIComponent(b.id)}" target="_blank" rel="noopener">Képes lista ↗</a>
+          <button class="link-btn" type="button" data-bact="print">Nyomtatás</button>
+          <button class="link-btn danger" type="button" data-bact="del">Törlés</button></div>
+        <button class="btn small primary" type="button" data-bact="kivitel" title="A tételek betöltése az Új kivitel űrlapba">Kivitelként rögzít →</button></div>
+    </article>`;
+  }).join('') : `<div class="empty">${bmode === 'mind' ? 'Még nem érkezett bérlési igény.' : 'Nincs nyitott bérlési igény.'}</div>`;
+}
+async function bejSet(id, statusz) {
+  const b = BEJ.find(x => x.id === id); if (!b) return;
+  try {
+    const r = await fetch('/api/ajanlat?id=' + encodeURIComponent(id), { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-pass': pass }, body: JSON.stringify({ statusz }) });
+    if (!r.ok) throw new Error((await r.json()).error);
+    b.statusz = statusz; renderBej(); toast(`${b.ceg || b.nev}: ${BST[statusz]}`);
+  } catch (e) { toast('Hiba: ' + e.message); renderBej(); }
+}
+$('bejCards').addEventListener('change', e => { const s = e.target.closest('[data-bact="st"]'); if (s) bejSet(s.closest('.bcard').dataset.id, s.value); });
+$('bejCards').addEventListener('click', async e => {
+  const el = e.target.closest('[data-bact]'); if (!el || el.tagName === 'SELECT') return;
+  const b = BEJ.find(x => x.id === el.closest('.bcard').dataset.id); if (!b) return;
+  const act = el.dataset.bact;
+  if (act === 'print') {
+    printList({ title: 'Bérlési igény – ' + (b.ceg || b.nev), subtitle: 'Total Team Raktár · beérkezett ' + huDate(b.created_at),
+      meta: [['Név', b.nev], ['Telefon', b.tel], ['Produkció / cég', b.ceg], ['Időszak', (b.tol || b.ig) ? `${huDate(b.tol) || '?'} – ${huDate(b.ig) || '?'}` : '']],
+      items: (b.tetelek || []).map(t => printItem(t.id, t.code, t.name, t.qty)), note: b.megjegyzes, check: true, sign: ['Kiadta', 'Átvette'] });
+  } else if (act === 'del') {
+    if (!confirm(`Törlöd ezt a bérlési igényt? (${b.ceg || b.nev})`)) return;
+    try { const r = await fetch('/api/ajanlat?id=' + encodeURIComponent(b.id), { method: 'DELETE', headers: { 'x-admin-pass': pass } }); if (!r.ok && r.status !== 204) throw new Error((await r.json()).error);
+      BEJ = BEJ.filter(x => x !== b); renderBej(); toast('Törölve'); } catch (err) { toast('Hiba: ' + err.message); }
+  } else if (act === 'kivitel') {
+    if ((sel.size || editing) && !confirm('Az Új kivitel űrlapon lévő tételek helyére ennek az igénynek a tételei kerülnek. Folytatod?')) return;
+    resetForm();
+    const skipped = [];
+    (b.tetelek || []).forEach(t => { const p = byId.get(t.id); if (p) sel.set(t.id, Math.min(t.qty, p.qty)); else skipped.push(t.code); });
+    const f = nf.elements;
+    f.projekt.value = b.ceg || b.nev; f.kivitel_napja.value = b.tol || today(); f.vissza_tervezett.value = b.ig || '';
+    f.megjegyzes.value = ['Bérlés: ' + b.nev + (b.tel ? ', ' + b.tel : ''), b.megjegyzes].filter(Boolean).join('\n');
+    fromBej = b.id;
+    showTab('uj'); renderSel(); renderPList(); window.scrollTo(0, 0);
+    toast(skipped.length ? `Betöltve. Kimaradt (nincs a raktárban): ${skipped.join(', ')}` : 'Betöltve az Új kivitel űrlapba – ellenőrizd és mentsd');
+  }
+});
+$('bmode').addEventListener('click', e => { const x = e.target.closest('button'); if (!x) return; bmode = x.dataset.m; $('bmode').querySelectorAll('button').forEach(y => y.classList.toggle('active', y === x)); renderBej(); });
+let bqT; $('bq').addEventListener('input', () => { clearTimeout(bqT); bqT = setTimeout(renderBej, 120); });
+$('breload').onclick = loadBej;
 </script>
 <script src="/print-list.js" defer></script>
 </body>

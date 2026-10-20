@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Bérlési igény – Total Team</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Egy beküldött bérlési igény képes listája (a levélben lévő link ide mutat) */
+:root {
+  --bg: #f6f6f3; --surface: #ffffff; --border: #e3e2dc; --fg: #1b1a17; --fg-muted: #7d7b73;
+  --accent: #a8823f; --accent-bg: #f7f0e3; --pill-bg: #edece7; --on-accent: #ffffff;
+  --shadow: 0 1px 6px rgba(0,0,0,.08); --radius: 8px;
+  --font-display: 'Playfair Display', Georgia, serif; --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141412; --surface: #1d1c1a; --border: #2f2e2a; --fg: #f0efea; --fg-muted: #94928a;
+    --accent: #cfa968; --accent-bg: #2a2418; --pill-bg: #292824; --on-accent: #141412; --shadow: 0 1px 6px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141412; --surface: #1d1c1a; --border: #2f2e2a; --fg: #f0efea; --fg-muted: #94928a;
+  --accent: #cfa968; --accent-bg: #2a2418; --pill-bg: #292824; --on-accent: #141412; color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
+a { color: inherit; }
+.header { background: var(--surface); border-bottom: 1px solid var(--border); }
+.header-inner { max-width: 1100px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+.logo { display: flex; align-items: center; gap: 8px; text-decoration: none; font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+.logo img { height: 38px; width: auto; display: block; }
+.btn { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius); padding: 8px 14px; cursor: pointer; font: inherit; font-weight: 600; color: var(--fg); }
+.btn:hover { border-color: var(--accent); }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-family: var(--font-display); font-size: clamp(24px, 4vw, 34px); line-height: 1.15; margin-bottom: 6px; text-wrap: balance; }
+.sub { color: var(--fg-muted); margin-bottom: 18px; }
+.meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 14px; }
+.meta b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-muted); font-weight: 600; }
+.meta span { font-size: 15px; font-weight: 500; overflow-wrap: anywhere; }
+.note { background: var(--accent-bg); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 18px; white-space: pre-wrap; }
+.sum { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 12px; }
+.sum h2 { font-size: 16px; }
+.sum span { color: var(--fg-muted); }
+.items { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow); }
+.ph { aspect-ratio: 3 / 4; background: var(--pill-bg); display: block; position: relative; }
+.ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ph .none { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--fg-muted); font-size: 12px; }
+.qty { position: absolute; top: 10px; right: 10px; background: var(--fg); color: var(--bg); font-weight: 700; font-size: 15px; border-radius: 20px; padding: 3px 11px; }
+.nimg { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; border-radius: 10px; padding: 1px 8px; }
+.info { padding: 10px 12px 12px; }
+.name { font-weight: 600; font-size: 15px; line-height: 1.3; }
+.code { color: var(--fg-muted); font-size: 12px; margin-top: 2px; }
+.state { text-align: center; padding: 80px 16px; color: var(--fg-muted); }
+.foot { margin-top: 28px; color: var(--fg-muted); font-size: 12px; text-align: center; }
+@media (max-width: 480px) {
+  .items { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .name { font-size: 13px; } .info { padding: 8px 10px 10px; }
+}
+</style>
+</head>
+<body>
+<header class="header"><div class="header-inner">
+  <a class="logo" href="/raktar.html"><img src="/img/total-team-logo-clean.png" alt="Total Team" width="49" height="38">Raktár</a>
+  <button class="btn" id="printBtn" type="button" hidden>🖨 Nyomtatás</button>
+</div></header>
+
+<main class="wrap">
+  <div class="state" id="state">Betöltés…</div>
+  <div id="view" hidden>
+    <h1 id="title">Bérlési igény</h1>
+    <p class="sub" id="sub"></p>
+    <div class="meta" id="meta"></div>
+    <div class="note" id="note" hidden></div>
+    <div class="sum"><h2>Kért tételek</h2><span id="sum"></span></div>
+    <ul class="items" id="items"></ul>
+    <p class="foot">Total Team · info@totalteam.hu · +36 20 961 1015</p>
+  </div>
+</main>
+
+<script>
+const R2 = 'https://pub-ad286558042d41eeaf37bc1c3f5badd8.r2.dev/';
+const webUrl = (u, size) => !u || !u.startsWith(R2) ? u : R2 + 'web/' + size + '/' + u.slice(R2.length).replace(/\.(jpe?g|png|webp|avif|heic)$/i, '') + '.jpg';
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const $ = id => document.getElementById(id);
+const huDate = v => v ? String(v).slice(0, 10).replace(/-/g, '.') + '.' : '';
+function imgFail(img) { const o = img.dataset.orig; if (o && !/\.heic$/i.test(o) && img.src !== o) img.src = o; else img.replaceWith(Object.assign(document.createElement('span'), { className: 'none', textContent: 'nincs kép' })); }
+
+(async () => {
+  const id = new URLSearchParams(location.search).get('id');
+  if (!id) { $('state').textContent = 'Hiányzó azonosító.'; return; }
+  try {
+    const [r, html] = await Promise.all([
+      fetch('/api/ajanlat?id=' + encodeURIComponent(id)).then(async x => { const d = await x.json(); if (!x.ok) throw new Error(d.error || 'Hiba'); return d; }),
+      fetch('/raktar.html').then(x => x.text()).catch(() => ''),
+    ]);
+    const m = html.match(/const PRODUCTS = (\[.*?\]);\s*\n/s);
+    const byId = new Map(m ? JSON.parse(m[1]).map(p => [p.id, p]) : []);
+    const items = (r.tetelek || []).map(t => { const p = byId.get(t.id) || {}; return { ...t, name: t.name || p.name, code: t.code || p.code, dims: t.dims || p.dims, imgs: p.imgs || [] }; });
+    const total = items.reduce((s, t) => s + (+t.qty || 0), 0);
+    const per = (r.tol || r.ig) ? `${huDate(r.tol) || '?'} – ${huDate(r.ig) || '?'}` : '';
+    const created = new Date(r.created_at);
+
+    document.title = `Bérlési igény – ${r.ceg || r.nev} – Total Team`;
+    $('title').textContent = 'Bérlési igény' + (r.ceg ? ' – ' + r.ceg : '');
+    $('sub').textContent = `Beküldve: ${created.toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}`;
+    $('meta').innerHTML = [['Név', r.nev], ['Telefon', r.tel ? `<a href="tel:${esc(r.tel.replace(/\s+/g, ''))}">${esc(r.tel)}</a>` : '', true], ['Produkció / cég', r.ceg], ['Időszak', per]]
+      .filter(x => x[1]).map(([k, v, raw]) => `<div><b>${k}</b><span>${raw ? v : esc(v)}</span></div>`).join('');
+    $('note').hidden = !r.megjegyzes; $('note').textContent = r.megjegyzes || '';
+    $('sum').textContent = `${items.length} tétel, összesen ${total} db`;
+    $('items').innerHTML = items.map(t => `<li class="item">
+      <a class="ph" href="/raktar.html#${encodeURIComponent(t.code || '')}" target="_blank" rel="noopener" title="Megnyitás a raktárban">${t.imgs[0] ? `<img src="${esc(webUrl(t.imgs[0], 'thumb'))}" data-orig="${esc(t.imgs[0])}" alt="${esc(t.name)}" loading="lazy" onerror="imgFail(this)">` : '<span class="none">nincs kép</span>'}
+        <span class="qty">${t.qty} db</span>${t.imgs.length > 1 ? `<span class="nimg">${t.imgs.length} kép</span>` : ''}</a>
+      <div class="info"><div class="name">${esc(t.name)}</div><div class="code">${esc(t.code)}${t.dims ? ' · ' + esc(t.dims) + ' cm' : ''}</div></div></li>`).join('');
+    $('state').hidden = true; $('view').hidden = false; $('printBtn').hidden = false;
+    $('printBtn').onclick = () => printList({
+      title: 'Bérlési igény' + (r.ceg ? ' – ' + r.ceg : ''), subtitle: 'Total Team Raktár · beküldve ' + huDate(r.created_at),
+      meta: [['Név', r.nev], ['Telefon', r.tel], ['Produkció / cég', r.ceg], ['Időszak', per]],
+      items: items.map(t => ({ img: t.imgs[0] ? webUrl(t.imgs[0], 'thumb') : '', orig: t.imgs[0] || '', code: t.code, name: t.name, dims: t.dims, qty: t.qty })),
+      note: r.megjegyzes, check: true,
+    });
+  } catch (e) { $('state').textContent = e.message || 'Nem sikerült betölteni.'; }
+})();
+</script>
+<script src="/print-list.js" defer></script>
+</body>
+</html>

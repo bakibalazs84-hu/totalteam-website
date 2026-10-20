@@ -194,6 +194,8 @@ button { font-family: inherit; }
 .cart-foot .rent-btn { flex: none; width: 100%; height: 42px; }
 .cart-sub { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--fg-muted); }
 .cart-links { display: inline-flex; gap: 14px; }
+.cart-done { background: var(--ok-bg, #e7f3e8); color: var(--ok, #2e7d32); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 500; }
+.cart-done a { color: inherit; font-weight: 600; }
 .link-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px; padding: 0; }
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 18px; border-radius: 20px; font-size: 13px; z-index: 400; box-shadow: var(--shadow-lg); max-width: calc(100% - 32px); text-align: center; }
 
@@ -301,10 +303,12 @@ button { font-family: inherit; }
         <label>Felvétel napja<input name="tol" type="date"></label>
         <label>Visszahozás napja<input name="ig" type="date"></label>
         <label class="full">Megjegyzés<textarea name="megj" rows="3"></textarea></label>
+        <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
       </form>
     </div>
     <div class="cart-foot">
       <div class="cart-sub"><span id="cartSum"></span><span class="cart-links"><button class="link-btn" id="cartPrint" type="button">Nyomtatás képekkel</button><button class="link-btn" id="cartClear" type="button">Lista ürítése</button></span></div>
+      <div class="cart-done" id="cartDone" hidden></div>
       <button class="rent-btn" id="cartSend" type="button">Bérlési igény küldése</button>
       <div class="cart-sub"><span>Ha nem nyílik meg a levelező: <code>info@totalteam.hu</code></span><button class="link-btn" id="cartCopy" type="button">Lista másolása</button></div>
     </div>
@@ -633,13 +637,31 @@ function cartText() {
     f.megj.value.trim() ? '\nMegjegyzés:\n' + f.megj.value.trim() : null,
   ].filter(x => x !== null).join('\n');
 }
-document.getElementById('cartSend').onclick = () => {
+document.getElementById('cartSend').onclick = async () => {
   if (!cartIds().length) return;
   if (!form.reportValidity()) return;
   const f = form.elements;
   if (f.tol.value && f.ig.value && f.ig.value < f.tol.value) { f.ig.setCustomValidity('A visszahozás nem lehet a felvétel előtt.'); form.reportValidity(); f.ig.setCustomValidity(''); return; }
   const subj = `Bérlési igény – ${cartIds().length} tétel` + (f.ceg.value.trim() ? ` – ${f.ceg.value.trim()}` : '') + (f.tol.value ? ` – ${huDate(f.tol.value)}` : '');
-  location.href = `mailto:info@totalteam.hu?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(cartText())}`;
+  const btn = document.getElementById('cartSend'); btn.disabled = true; btn.textContent = 'Küldés…';
+  // 1) Elmentjük a kérést → képes lista oldal + megjelenik az adminban bejövő projektként
+  // 2) Megnyílik a levelező, a levélben a képes lista linkje
+  let link = '';
+  try {
+    const r = await fetch('/api/ajanlat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      nev: f.nev.value, tel: f.tel.value, ceg: f.ceg.value, tol: f.tol.value, ig: f.ig.value, megjegyzes: f.megj.value, website: f.website.value,
+      tetelek: cartIds().map(id => { const p = byId(id); return { id, code: p.code, name: p.name, dims: p.dims, qty: cart[id] }; }),
+    }) });
+    const d = await r.json(); if (r.ok && d.id) link = location.origin + '/ajanlat.html?id=' + d.id;
+  } catch (e) { /* ha a mentés nem sikerül, a levél akkor is elmegy a szöveges listával */ }
+  btn.disabled = false; btn.textContent = 'Bérlési igény küldése';
+  const body = link ? `Képes lista a kért tételekről:\n${link}\n\n${cartText()}` : cartText();
+  if (link) {
+    const ok = document.getElementById('cartDone');
+    ok.innerHTML = `✓ Megkaptuk a bérlési igényed. <a href="${link}" target="_blank" rel="noopener">Képes lista megnyitása</a>`;
+    ok.hidden = false;
+  }
+  location.href = `mailto:info@totalteam.hu?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
 };
 document.getElementById('cartCopy').onclick = async () => {
   try { await navigator.clipboard.writeText(cartText()); toast('A lista a vágólapra került – beillesztheted egy emailbe.'); }
