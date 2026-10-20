@@ -96,6 +96,21 @@ label.f { display: flex; flex-direction: column; gap: 3px; font-size: 11px; colo
 .zv-dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
 .zv-dots img { width: 54px; height: 42px; object-fit: cover; border-radius: 4px; opacity: .5; cursor: pointer; border: 2px solid transparent; }
 .zv-dots img.on { opacity: 1; border-color: #fff; }
+.zv-count { position: absolute; top: 22px; left: 16px; color: #ddd; font-size: 13px; font-variant-numeric: tabular-nums; }
+.zv-pick { display: flex; align-items: center; gap: 12px; color: #fff; }
+.zv-pick[hidden] { display: none; }
+.zv-add { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 10px 18px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.zv-on { color: #8fd694; font-weight: 600; }
+.zv-out { color: #f0c36b; font-size: 13px; }
+.zv-qty { display: flex; border: 1px solid rgba(255,255,255,.35); border-radius: 8px; overflow: hidden; }
+.zv-qty button { background: rgba(255,255,255,.1); color: #fff; border: 0; width: 44px; height: 42px; font-size: 20px; cursor: pointer; }
+.zv-qty output { width: 44px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+@media (max-width: 640px) {
+  .zv { padding: 56px 8px 16px; justify-content: flex-start; }
+  .zv-img { max-height: calc(100vh - 250px); }
+  .zv-nav { top: auto; bottom: 18px; transform: none; width: 52px; height: 52px; }
+  .zv-prev { left: 10px; } .zv-next { right: 10px; }
+}
 .hp { position: fixed; z-index: 150; pointer-events: none; display: none; width: 340px; background: var(--surface, #fff); border: 1px solid var(--border, #ddd); border-radius: 8px; padding: 6px; box-shadow: 0 12px 32px rgba(0,0,0,.25); }
 .hp.on { display: block; }
 .hp img { width: 100%; height: 255px; object-fit: contain; display: block; border-radius: 4px; background: var(--pill-bg, #f2f2f2); }
@@ -337,10 +352,12 @@ html, body { overflow-x: hidden; }
 <div class="hp" id="hp"><img alt=""><div></div></div>
 <div class="zv" id="zv" role="dialog" aria-modal="true" aria-label="Tétel képe">
   <button class="zv-x" type="button" data-z="x" aria-label="Bezárás">×</button>
-  <button class="zv-nav zv-prev" type="button" data-z="prev" aria-label="Előző kép">‹</button>
+  <div class="zv-count" id="zvCount"></div>
+  <button class="zv-nav zv-prev" type="button" data-z="prev" aria-label="Előző tétel">‹</button>
   <img class="zv-img" id="zvImg" alt="">
-  <button class="zv-nav zv-next" type="button" data-z="next" aria-label="Következő kép">›</button>
+  <button class="zv-nav zv-next" type="button" data-z="next" aria-label="Következő tétel">›</button>
   <div class="zv-cap" id="zvCap"></div>
+  <div class="zv-pick" id="zvPick" hidden></div>
   <div class="zv-dots" id="zvDots"></div>
 </div>
 
@@ -870,32 +887,73 @@ $('scanManual').addEventListener('submit', async e => { e.preventDefault(); cons
 })();
 
 // Kép nagyítása: bármelyik kis képre kattintva (kivitel, kint lévő, visszavétel, választó lista)
-let zv = { p: null, i: 0 };
+let zv = { ids: [], k: 0, i: 0, pick: false };
+const zvP = () => byId.get(zv.ids[zv.k]);
 function zvShow() {
-  const { p, i } = zv, u = p.imgs[i];
+  const p = zvP(), i = Math.min(zv.i, p.imgs.length - 1), u = p.imgs[i], n = zv.ids.length;
   const img = $('zvImg'); img.dataset.orig = u; img.onerror = () => { if (img.src !== u && !/\.heic$/i.test(u)) img.src = u; };
   img.src = webUrl(u, 'large'); img.alt = p.name;
-  $('zvCap').innerHTML = `<b>${esc(p.name)}</b><small>${esc(p.code || '')}${p.category ? ' · ' + esc(p.category) : ''}${p.dims ? ' · ' + esc(p.dims) + ' cm' : ''}${p.qty != null ? ' · készlet: ' + esc(p.qty) + ' db' : ''}${p.imgs.length > 1 ? ' · ' + (i + 1) + '/' + p.imgs.length + ' kép' : ''} · <a href="/raktar.html#${encodeURIComponent(p.code || '')}" target="_blank" rel="noopener">raktár adatlap ↗</a></small>`;
+  $('zvCount').textContent = n > 1 ? `${zv.k + 1} / ${n}` : '';
+  $('zvCap').innerHTML = `<b>${esc(p.name)}</b><small>${esc(p.code || '')}${p.category ? ' · ' + esc(p.category) : ''}${p.dims ? ' · ' + esc(p.dims) + ' cm' : ''}${p.qty != null ? ' · készlet: ' + esc(p.qty) + ' db' : ''}${p.imgs.length > 1 ? ' · ' + (i + 1) + '/' + p.imgs.length + ' kép' : ''} · <a href="/raktar.html#${encodeURIComponent(p.code || '')}" target="_blank" rel="noopener">adatlap ↗</a></small>`;
   $('zvDots').innerHTML = p.imgs.length > 1 ? p.imgs.map((x, j) => `<img src="${esc(webUrl(x))}" data-zi="${j}" class="${j === i ? 'on' : ''}" alt="">`).join('') : '';
-  document.querySelectorAll('.zv-nav').forEach(b => b.style.display = p.imgs.length > 1 ? '' : 'none');
+  // Új kivitel listából nyitva: itt is ki lehet választani / darabszámot állítani
+  const pk = $('zvPick'); pk.hidden = !zv.pick;
+  if (zv.pick) {
+    const q = sel.get(p.id) || 0, o = outMap().get(p.id) || 0;
+    pk.innerHTML = q
+      ? `<span class="zv-on">✓ Kiválasztva</span><div class="zv-qty"><button type="button" data-z="q-">−</button><output>${q}</output><button type="button" data-z="q+">+</button></div>`
+      : `<button type="button" class="zv-add" data-z="add">+ Hozzáadás a kivitelhez</button>${o ? `<span class="zv-out">kint: ${o}</span>` : ''}`;
+  }
+  document.querySelectorAll('.zv-nav').forEach(b => b.style.visibility = n > 1 ? '' : 'hidden');
+  // A következő tétel képének előtöltése
+  const nx = byId.get(zv.ids[(zv.k + 1) % n]); if (nx && n > 1) new Image().src = webUrl(nx.imgs[0], 'large');
 }
-function zvOpen(p) { if (!p || !p.imgs || !p.imgs.length) return; zv = { p, i: 0 }; zvShow(); $('zv').classList.add('open'); }
+function zvOpen(id, ids, pick) {
+  ids = (ids || []).filter(x => { const p = byId.get(x); return p && p.imgs && p.imgs.length; });
+  if (!ids.includes(id)) ids = [id];
+  if (!byId.get(id) || !byId.get(id).imgs || !byId.get(id).imgs.length) return;
+  zv = { ids, k: ids.indexOf(id), i: 0, pick: !!pick }; zvShow(); $('zv').classList.add('open');
+}
 function zvClose() { $('zv').classList.remove('open'); $('zvImg').removeAttribute('src'); }
-function zvStep(d) { const n = zv.p.imgs.length; zv.i = (zv.i + d + n) % n; zvShow(); }
+function zvItem(d) { const n = zv.ids.length; if (n < 2) return; zv.k = (zv.k + d + n) % n; zv.i = 0; zvShow(); }
+function zvPickAdj(d) {
+  const p = zvP(), id = p.id, n = sel.get(id) || 0, v = selRet.get(id) || 0;
+  if (d > 0) { if (n < p.qty) sel.set(id, n + 1); else toast(`${p.code}: a készlet ${p.qty} db`); }
+  else if (n > Math.max(1, v)) sel.set(id, n - 1);
+  else if (v) toast('Előbb a visszahozott darabszámot csökkentsd.');
+  else { sel.delete(id); selRet.delete(id); }
+  renderPList(); renderSel(); zvShow();
+}
 document.addEventListener('click', e => {
   const t = e.target.closest('.thumb.zoom'); if (!t) return;
-  e.preventDefault(); e.stopPropagation(); zvOpen(byId.get(t.dataset.zoom));
+  e.preventDefault(); e.stopPropagation();
+  const pick = !!t.closest('#plist');
+  // Lapozás: az aktuális lista tételei (új kivitelnél a teljes szűrt lista, nem csak a látható 60)
+  let ids;
+  if (pick) { const q = $('pq').value.trim().toLowerCase(); ids = PRODUCTS.filter(p => pmatch(p, q)).map(p => p.id); }
+  else { const box = t.closest('.kcard') || t.closest('section') || document; ids = [...new Set([...box.querySelectorAll('.thumb.zoom')].map(x => x.dataset.zoom))]; }
+  zvOpen(t.dataset.zoom, ids, pick);
 }, true);
 $('zv').addEventListener('click', e => {
-  const z = e.target.dataset.z, zi = e.target.dataset.zi;
+  const z = e.target.closest('[data-z]') ? e.target.closest('[data-z]').dataset.z : null, zi = e.target.dataset.zi;
   if (zi != null) { zv.i = +zi; zvShow(); }
-  else if (z === 'prev') zvStep(-1); else if (z === 'next') zvStep(1);
+  else if (z === 'prev') zvItem(-1); else if (z === 'next') zvItem(1);
+  else if (z === 'add' || z === 'q+') zvPickAdj(1); else if (z === 'q-') zvPickAdj(-1);
   else if (z === 'x' || e.target.id === 'zv') zvClose();
 });
 document.addEventListener('keydown', e => {
   if (!$('zv').classList.contains('open')) return;
-  if (e.key === 'Escape') zvClose(); else if (e.key === 'ArrowLeft') zvStep(-1); else if (e.key === 'ArrowRight') zvStep(1);
+  if (e.key === 'Escape') zvClose(); else if (e.key === 'ArrowLeft') zvItem(-1); else if (e.key === 'ArrowRight') zvItem(1);
 });
+// Mobil: balra / jobbra húzással lapoz a tételek között
+(() => {
+  let sx = 0, sy = 0, st = 0;
+  $('zv').addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; st = Date.now(); }, { passive: true });
+  $('zv').addEventListener('touchend', e => {
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3 && Date.now() - st < 800) zvItem(dx < 0 ? 1 : -1);
+  }, { passive: true });
+})();
 
 // Egérrel a kis kép fölé állva nagyobb előnézet a kurzor mellett (csak egeres eszközön)
 (() => {
