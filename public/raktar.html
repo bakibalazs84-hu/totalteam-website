@@ -405,10 +405,30 @@ function imgHTML(p, size) {
   return `<div class="ph">${ICON}Nincs fotó</div>`;
 }
 
+// ── Foglaltság: a kivitel adminban rögzített (kint lévő) és kézzel foglalt tételek élőben
+const freeOf = p => p.free == null ? p.qty : p.free;
+const statusText = p => p.status === 'foglalt' ? 'Foglalt' : freeOf(p) < p.qty ? `${freeOf(p)} db szabad` : 'Szabad';
+async function loadAvailability() {
+  try {
+    const r = await fetch('/api/foglaltsag'); if (!r.ok) return;
+    const { kint = {}, kezi = {} } = await r.json();
+    PRODUCTS.forEach(p => {
+      p.free = Math.max(0, p.qty - (kint[p.id] || 0));
+      p.status = kezi[p.id] || p.free <= 0 ? 'foglalt' : 'szabad';
+    });
+    // A bérlési listán lévő mennyiséget a szabad darabszámhoz igazítjuk
+    let changed = false;
+    Object.keys(cart).forEach(id => { const p = byId(id); if (!p) return; const max = p.status === 'foglalt' ? 0 : freeOf(p); if (cart[id] > max) { if (max) cart[id] = max; else delete cart[id]; changed = true; } });
+    if (changed) { saveCart(); updateCartBtn(false); toast('A bérlési listád a jelenlegi szabad készlethez igazítva.'); }
+    render(); renderCart();
+    if (cur && !document.getElementById('modal').hidden) openModal(cur.id);
+  } catch (e) { /* ha nem elérhető, marad a statikus állapot */ }
+}
+
 function cardHTML(p) {
   const n = p.imgs.length;
   return `<button class="card" data-id="${p.id}" type="button">
-    <div class="card-img${FIT_CATS.includes(p.category) ? ' fit' : ''}">${imgHTML(p, 'thumb')}<span class="badge ${p.status}">${p.status === 'foglalt' ? 'Foglalt' : 'Szabad'}</span>${cart[p.id] ? `<span class="badge inlist">✓ Listán: ${cart[p.id]}</span>` : ''}${n > 1 ? `<span class="nimg">${n} kép</span>` : ''}</div>
+    <div class="card-img${FIT_CATS.includes(p.category) ? ' fit' : ''}">${imgHTML(p, 'thumb')}<span class="badge ${p.status}">${statusText(p)}</span>${cart[p.id] ? `<span class="badge inlist">✓ Listán: ${cart[p.id]}</span>` : ''}${n > 1 ? `<span class="nimg">${n} kép</span>` : ''}</div>
     <div class="card-body">
       <div class="card-name">${esc(p.name)}</div>
       <div class="card-code">${p.code}${state.list ? ' · ' + esc(p.category) : ''}</div>
@@ -435,7 +455,7 @@ document.getElementById('moreBtn').addEventListener('click', () => { state.shown
 let cur = null, qty = 1;
 function openModal(id) {
   const p = PRODUCTS.find(x => x.id === id); if (!p) return;
-  cur = p; qty = cart[p.id] || 1; document.getElementById('qNum').textContent = qty;
+  cur = p; qty = Math.min(cart[p.id] || 1, Math.max(1, freeOf(p))); document.getElementById('qNum').textContent = qty;
   const imgs = showable(p);
   const main = document.getElementById('mMain');
   const setMain = i => { main.innerHTML = imgTag(imgs[i], 'large', p.name, false); };
@@ -449,7 +469,7 @@ function openModal(id) {
   document.getElementById('mDims').textContent = p.dims || '—';
   document.getElementById('mQty').textContent = p.qty + ' db';
   document.getElementById('mImgs').textContent = p.imgs.length + ' db';
-  document.getElementById('mStatus').innerHTML = `<span class="pill ${p.status}">${p.status === 'foglalt' ? 'Foglalt' : 'Szabad'}</span>`;
+  document.getElementById('mStatus').innerHTML = `<span class="pill ${p.status}">${statusText(p)}</span>`;
   const tags = p.tags.filter(t => t !== p.sub);
   document.getElementById('mTagsWrap').hidden = !tags.length;
   document.getElementById('mTags').innerHTML = tags.map(t => `<span class="tag">${esc(t)}</span>`).join('');
@@ -477,7 +497,7 @@ document.getElementById('modalClose').onclick = closeModal;
 document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeCart(); } });
 document.getElementById('qMinus').onclick = () => { if (qty > 1) document.getElementById('qNum').textContent = --qty; updateRentBtn(); };
-document.getElementById('qPlus').onclick = () => { if (cur && qty < cur.qty) document.getElementById('qNum').textContent = ++qty; updateRentBtn(); };
+document.getElementById('qPlus').onclick = () => { if (cur && qty < freeOf(cur)) document.getElementById('qNum').textContent = ++qty; updateRentBtn(); };
 // ── Bérlési lista (gyűjtő): több tétel → egyetlen email
 let cart = {};
 try { cart = JSON.parse(localStorage.getItem('tt_cart') || '{}') || {}; } catch (e) { cart = {}; }
@@ -515,7 +535,7 @@ function renderCart() {
     const p = byId(id), src = showable(p)[0];
     return `<li class="cart-item" data-id="${id}">
       <div class="cart-thumb">${src ? imgTag(src, 'thumb', '', true) : `<div class="ph">${ICON}</div>`}</div>
-      <div class="cart-info"><div class="cart-name">${esc(p.name)}</div><div class="cart-code">${p.code}${p.dims ? ' · ' + esc(p.dims) + ' cm' : ''} · max. ${p.qty} db</div></div>
+      <div class="cart-info"><div class="cart-name">${esc(p.name)}</div><div class="cart-code">${p.code}${p.dims ? ' · ' + esc(p.dims) + ' cm' : ''} · max. ${freeOf(p)} db</div></div>
       <div class="qty"><button type="button" data-a="-" aria-label="Kevesebb">−</button><output>${cart[id]}</output><button type="button" data-a="+" aria-label="Több">+</button></div>
       <button class="cart-remove" type="button" data-a="x" aria-label="Törlés a listáról">✕</button></li>`;
   }).join('');
@@ -539,7 +559,7 @@ document.getElementById('cart').addEventListener('click', e => { if (e.target.id
 document.getElementById('cartItems').addEventListener('click', e => {
   const b = e.target.closest('button[data-a]'); if (!b) return;
   const id = b.closest('.cart-item').dataset.id, p = byId(id);
-  if (b.dataset.a === '+') { if (cart[id] < p.qty) cart[id]++; }
+  if (b.dataset.a === '+') { if (cart[id] < freeOf(p)) cart[id]++; else toast(`${p.code}: jelenleg ${freeOf(p)} db szabad`); }
   else if (b.dataset.a === '-') { if (cart[id] > 1) cart[id]--; }
   else delete cart[id];
   cartChanged(false);
@@ -602,6 +622,7 @@ _hdr(); window.addEventListener('resize', _hdr);
 renderFilters();
 render();
 openFromHash();
+loadAvailability();
 </script>
 
 </body>

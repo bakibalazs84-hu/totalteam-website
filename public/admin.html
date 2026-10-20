@@ -107,6 +107,16 @@ label.f { display: flex; flex-direction: column; gap: 3px; font-size: 11px; colo
 .stock { font-size: 11px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--fg-muted); }
 .stock b { color: var(--fg); }
 .stock .out { color: var(--warn); }
+.flist .prow { cursor: default; flex-wrap: wrap; }
+.flist .pinfo { flex: 1 1 180px; min-width: 0; }
+.fstat { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.pill.free { background: var(--ok-bg); color: var(--ok); }
+.pill.res { background: var(--bad-bg); color: var(--bad); }
+.fok { width: 100%; display: flex; gap: 8px; padding: 4px 0 2px 62px; }
+.fok input { flex: 1; }
+.kezi-ok { font-size: 11px; color: var(--bad); margin-top: 2px; }
+.prow .pill.res, .sel-item .pill.res { margin-left: 4px; }
+@media (max-width: 480px) { .fok { padding-left: 0; } }
 .add-ico { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--accent); font-size: 16px; }
 .prow .qty.pq button { width: 30px; height: 30px; background: var(--surface); }
 .prow .qty.pq output { width: 32px; background: var(--surface); }
@@ -242,6 +252,7 @@ html, body { overflow-x: hidden; }
         <button class="tab active" data-tab="uj" type="button">Új kivitel</button>
         <button class="tab" data-tab="kint" type="button">Kint lévő<span class="n" id="nKint"></span></button>
         <button class="tab" data-tab="elozmeny" type="button">Előzmények</button>
+        <button class="tab" data-tab="fog" type="button">Foglaltság<span class="n" id="nFog"></span></button>
       </nav>
       <div class="head-right">
         <button class="btn small primary scan-open" id="scanOpen" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="4" height="4"/><rect x="13" y="13" width="4" height="4"/><path d="M13 7h4v2M7 15v2h2"/></svg>Beolvasás</button>
@@ -293,6 +304,17 @@ html, body { overflow-x: hidden; }
       <div class="panel sum-wrap" id="kintSum" hidden></div>
     </section>
 
+    <!-- Foglaltság -->
+    <section id="tab-fog" hidden>
+      <div class="toolbar">
+        <input type="search" id="fq" placeholder="Keresés: név, kód, kategória…" autocomplete="off">
+        <div class="seg" id="fmode"><button type="button" data-m="mind" class="active">Mind</button><button type="button" data-m="foglalt">Foglalt</button><button type="button" data-m="kezi">Kézzel foglalt</button><button type="button" data-m="kint">Kint van</button></div>
+      </div>
+      <p class="muted" style="margin:-4px 0 12px">A nyilvános raktár oldalon automatikusan <b>foglalt</b> lesz, aminek minden darabja kint van, és ami itt kézzel foglaltra van téve. Részben kint lévőnél „X db szabad” látszik. A változás fél percen belül megjelenik.</p>
+      <div class="panel" style="padding:0 12px"><ul class="plist flist" id="flist" style="max-height:none;border-top:0"></ul>
+      <div class="more" id="fmore" hidden><button class="btn small" id="fmoreBtn" type="button">Továbbiak</button></div></div>
+    </section>
+
     <!-- Előzmények -->
     <section id="tab-elozmeny" hidden>
       <div class="toolbar"><input type="search" id="hq" placeholder="Keresés az előzményekben…" autocomplete="off"></div>
@@ -338,6 +360,7 @@ try { pass = sessionStorage.getItem('tt_admin') || ''; } catch (e) {}
 let PRODUCTS = [], byId = new Map(), rows = [];
 let sel = new Map();          // id → qty (új kivitel)
 let pcat = 'Minden', pshown = 60, kmode = 'proj';
+let KEZI = {}, fmode = 'mind', fshown = 80, fEdit = null;   // kézi foglalások: id → ok
 
 let toastT;
 function toast(msg) {
@@ -398,13 +421,20 @@ async function start() {
   try { await Promise.all([loadProducts(), refresh()]); } catch (e) { showErr($('appErr'), e.message); }
   renderPicker(); renderSel(); renderLists();
 }
-async function refresh() { rows = (await api('GET')) || []; rows.forEach(r => { r.tetelek = r.tetelek || []; }); renderLists(); }
+async function refresh() { rows = (await api('GET')) || []; rows.forEach(r => { r.tetelek = r.tetelek || []; }); await loadKezi(); renderLists(); }
+async function loadKezi() {
+  try {
+    const r = await fetch('/api/foglaltsag', { headers: { 'x-admin-pass': pass }, cache: 'no-store' });
+    const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Hiba');
+    KEZI = d.kezi || {};
+  } catch (e) { KEZI = {}; showErr($('appErr'), 'Foglaltság: ' + e.message); }
+}
 
 // ── Fülek
 document.querySelector('.tabs').addEventListener('click', e => {
   const b = e.target.closest('.tab'); if (!b) return;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === b));
-  ['uj', 'kint', 'elozmeny'].forEach(k => { $('tab-' + k).hidden = k !== b.dataset.tab; });
+  ['uj', 'kint', 'elozmeny', 'fog'].forEach(k => { $('tab-' + k).hidden = k !== b.dataset.tab; });
   window.scrollTo(0, 0);
 });
 
@@ -426,7 +456,7 @@ function renderPList() {
     const o = out.get(p.id) || 0;
     return `<li class="prow ${sel.has(p.id) ? 'sel' : ''}" data-id="${p.id}">${thumb(p)}
       <div class="pinfo"><div class="pname">${esc(p.name)}</div><div class="pmeta">${p.code}${p.dims ? ' · ' + esc(p.dims) + ' cm' : ''}</div></div>
-      <div class="stock">Készlet: <b>${p.qty}</b>${o ? `<br><span class="out">kint: ${o}</span>` : ''}</div>
+      <div class="stock">Készlet: <b>${p.qty}</b>${o ? `<br><span class="out">kint: ${o}</span>` : ''}${p.id in KEZI ? `<br><span class="pill res" title="${esc(KEZI[p.id])}">kézzel foglalt</span>` : ''}</div>
       ${sel.has(p.id)
         ? `<div class="qty pq"><button type="button" data-pa="-" aria-label="Kevesebb">−</button><output>${sel.get(p.id)}</output><button type="button" data-pa="+" aria-label="Több">+</button></div>`
         : '<span class="add-ico">+</span>'}</li>`;
@@ -643,6 +673,7 @@ function cardHTML(r, open) {
   </article>`;
 }
 function renderLists() {
+  renderFog();
   const open = rows.filter(isOpen), closed = rows.filter(r => !isOpen(r));
   const totalOut = open.reduce((s, r) => s + r.tetelek.reduce((a, t) => a + remaining(t), 0), 0);
   $('nKint').textContent = open.length ? open.length : '';
@@ -723,7 +754,7 @@ const scanCanvas = document.createElement('canvas'), scanCtx = scanCanvas.getCon
 
 function showTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
-  ['uj', 'kint', 'elozmeny'].forEach(k => { $('tab-' + k).hidden = k !== name; });
+  ['uj', 'kint', 'elozmeny', 'fog'].forEach(k => { $('tab-' + k).hidden = k !== name; });
 }
 function codeFromText(text) {
   let s = String(text || '').trim();
@@ -890,6 +921,62 @@ document.addEventListener('keydown', e => {
   document.addEventListener('click', () => { hp.classList.remove('on'); cur = null; }, true);
   addEventListener('scroll', () => { hp.classList.remove('on'); cur = null; }, true);
 })();
+
+// ── Foglaltság fül: automatikus (kint lévő) + kézi foglalás
+function fogState(p, out) {
+  const o = out.get(p.id) || 0, free = Math.max(0, p.qty - o), kezi = p.id in KEZI;
+  return { o, free, kezi, foglalt: kezi || free <= 0 };
+}
+function renderFog() {
+  if (!PRODUCTS.length) return;
+  const out = outMap(), q = $('fq').value.trim().toLowerCase();
+  $('nFog').textContent = Object.keys(KEZI).length || '';
+  const list = PRODUCTS.filter(p => {
+    const st = fogState(p, out);
+    if (fmode === 'foglalt' && !st.foglalt) return false;
+    if (fmode === 'kezi' && !st.kezi) return false;
+    if (fmode === 'kint' && !st.o) return false;
+    return !q || q.split(/\s+/).every(w => (p.name + ' ' + p.code + ' ' + p.code.replace('-', '') + ' ' + p.category).toLowerCase().includes(w));
+  });
+  $('flist').innerHTML = list.length ? list.slice(0, fshown).map(p => {
+    const st = fogState(p, out);
+    const pill = st.foglalt ? `<span class="pill res">Foglalt${st.kezi ? ' (kézi)' : ''}</span>` : st.o ? `<span class="pill part">${st.free} db szabad</span>` : '<span class="pill free">Szabad</span>';
+    return `<li class="prow" data-id="${esc(p.id)}">${thumb(p)}
+      <div class="pinfo"><div class="pname">${esc(p.name)}</div><div class="pmeta">${esc(p.code)} · készlet: ${p.qty}${st.o ? ` · <span style="color:var(--warn)">kint: ${st.o}</span>` : ''}</div>${st.kezi && KEZI[p.id] ? `<div class="kezi-ok">${esc(KEZI[p.id])}</div>` : ''}</div>
+      <div class="fstat">${pill}${st.kezi
+        ? '<button class="btn small" type="button" data-f="off">Kézi foglalás le</button>'
+        : `<button class="btn small" type="button" data-f="edit">Foglalttá tesz</button>`}</div>
+      ${fEdit === p.id ? `<div class="fok"><input type="text" class="fok-in" maxlength="300" placeholder="Miért foglalt? (nem kötelező, csak itt látszik)"><button class="btn small primary" type="button" data-f="on">Mentés</button><button class="link-btn" type="button" data-f="cancel">Mégse</button></div>` : ''}</li>`;
+  }).join('') : '<li class="empty">Nincs találat.</li>';
+  $('fmore').hidden = list.length <= fshown;
+  $('fmoreBtn').textContent = `Továbbiak (még ${Math.max(0, list.length - fshown)})`;
+  const fi = $('flist').querySelector('.fok-in'); if (fi) fi.focus();
+}
+let fqT; $('fq').addEventListener('input', () => { clearTimeout(fqT); fqT = setTimeout(() => { fshown = 80; renderFog(); }, 120); });
+$('fmoreBtn').onclick = () => { fshown += 80; renderFog(); };
+$('fmode').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; fmode = b.dataset.m; fshown = 80; $('fmode').querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b)); renderFog(); });
+async function fogSave(id, on, ok) {
+  const p = byId.get(id);
+  try {
+    if (on) { await fetch('/api/foglaltsag', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-pass': pass }, body: JSON.stringify({ id, ok }) }).then(async r => { if (!r.ok) throw new Error((await r.json()).error); }); KEZI[id] = ok || ''; }
+    else { await fetch('/api/foglaltsag?id=' + encodeURIComponent(id), { method: 'DELETE', headers: { 'x-admin-pass': pass } }).then(async r => { if (!r.ok) throw new Error((await r.json()).error); }); delete KEZI[id]; }
+    fEdit = null; renderFog(); renderPList();
+    toast(on ? `${p ? p.code : id}: foglalt` : `${p ? p.code : id}: kézi foglalás levéve`);
+  } catch (e) { toast('Hiba: ' + e.message); }
+}
+$('flist').addEventListener('click', e => {
+  const b = e.target.closest('button[data-f]'); if (!b) return;
+  const id = b.closest('.prow').dataset.id, f = b.dataset.f;
+  if (f === 'edit') { fEdit = id; renderFog(); }
+  else if (f === 'cancel') { fEdit = null; renderFog(); }
+  else if (f === 'on') fogSave(id, true, b.parentNode.querySelector('.fok-in').value.trim());
+  else if (f === 'off') fogSave(id, false);
+});
+$('flist').addEventListener('keydown', e => {
+  if (!e.target.classList.contains('fok-in')) return;
+  if (e.key === 'Enter') { e.preventDefault(); fogSave(e.target.closest('.prow').dataset.id, true, e.target.value.trim()); }
+  else if (e.key === 'Escape') { fEdit = null; renderFog(); }
+});
 </script>
 </body>
 </html>
