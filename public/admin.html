@@ -438,13 +438,17 @@ async function start() {
   try { await Promise.all([loadProducts(), refresh()]); } catch (e) { showErr($('appErr'), e.message); }
   renderPicker(); renderSel(); renderLists();
 }
-async function refresh() { rows = (await api('GET')) || []; rows.forEach(r => { r.tetelek = r.tetelek || []; }); await loadKezi(); renderLists(); }
+async function refresh() { rows = (await api('GET')) || []; rows.forEach(r => { r.tetelek = r.tetelek || []; }); renderLists(); loadKezi(); }
 async function loadKezi() {
   try {
-    const r = await fetch('/api/foglaltsag', { headers: { 'x-admin-pass': pass }, cache: 'no-store' });
+    // Háttérben töltődik, hogy a lista ne várjon rá (a szerver néha lassan ébred)
+    const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 45000);
+    const r = await fetch('/api/foglaltsag', { headers: { 'x-admin-pass': pass }, cache: 'no-store', signal: ctl.signal });
+    clearTimeout(tm);
     const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Hiba');
     KEZI = d.kezi || {};
-  } catch (e) { KEZI = {}; showErr($('appErr'), 'Foglaltság: ' + e.message); }
+    if (PRODUCTS.length) { renderFog(); renderPList(); }
+  } catch (e) { showErr($('appErr'), 'Foglaltság betöltése nem sikerült: ' + (e.name === 'AbortError' ? 'időtúllépés' : e.message)); }
 }
 
 // ── Fülek
