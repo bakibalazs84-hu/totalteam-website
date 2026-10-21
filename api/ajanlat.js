@@ -7,7 +7,7 @@
 // PATCH /api/ajanlat?id=…         → admin: státusz { statusz: 'uj' | 'ajanlat' | 'kiadva' | 'lezart' }
 // DELETE /api/ajanlat?id=…        → admin: törlés
 
-const { passOk, sb } = require('./_lib');
+const { sb, auth, can } = require('./_lib');
 const TABLE = 'ajanlatkeresek';
 const STATUSZ = ['uj', 'ajanlat', 'kiadva', 'lezart'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -17,7 +17,6 @@ const date = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? v : null;
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Robots-Tag', 'noindex');
-  const admin = passOk(req.headers['x-admin-pass']);
   const id = req.query && req.query.id ? String(req.query.id) : null;
   try {
     let body = req.body;
@@ -43,7 +42,9 @@ module.exports = async (req, res) => {
     }
 
     if (!process.env.ADMIN_PASSWORD) return res.status(500).json({ error: 'Az ADMIN_PASSWORD nincs beállítva a Vercelen.' });
-    if (!admin) return res.status(401).json({ error: 'Hibás jelszó.' });
+    const user = await auth(req);
+    if (!user) return res.status(401).json({ error: 'Lejárt vagy hibás belépés.' });
+    if (!can(user, req.method === 'GET' ? 'ajanlat:read' : 'ajanlat:write')) return res.status(403).json({ error: 'Ehhez nincs jogosultságod.' });
 
     if (req.method === 'GET') return res.status(200).json(await sb(`${TABLE}?select=*&order=created_at.desc&limit=500`, { method: 'GET' }));
     if (req.method === 'PATCH') {

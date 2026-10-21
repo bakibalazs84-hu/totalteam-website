@@ -28,4 +28,58 @@ async function sb(path, opts = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-module.exports = { passOk, sb };
+// ── Felhasználók és jogosultságok
+// Szerepek: admin (minden + felhasználók kezelése), raktaros (kivitel, visszavétel, foglaltság), ajanlat (bejövő bérlési igények)
+const PERMS = {
+  admin:    ['kivitel:read', 'kivitel:write', 'fog:read', 'fog:write', 'ajanlat:read', 'ajanlat:write', 'users'],
+  raktaros: ['kivitel:read', 'kivitel:write', 'fog:read', 'fog:write'],
+  ajanlat:  ['kivitel:read', 'fog:read', 'ajanlat:read', 'ajanlat:write'],
+};
+const ROLES = Object.keys(PERMS);
+const can = (user, perm) => !!user && (PERMS[user.szerep] || []).includes(perm);
+
+function hashPw(pw) {
+  const salt = crypto.randomBytes(16);
+  return 's1$' + salt.toString('hex') + '$' + crypto.scryptSync(String(pw), salt, 32).toString('hex');
+}
+function verifyPw(pw, stored) {
+  const [v, salt, hash] = String(stored || '').split('$');
+  if (v !== 's1' || !salt || !hash) return false;
+  const a = crypto.scryptSync(String(pw), Buffer.from(salt, 'hex'), 32), b = Buffer.from(hash, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// Munkamenet: aláírt token (nem kell hozzá adatbázis). A kulcs a SESSION_SECRET, ha nincs, a meglévő titkokból képződik.
+const secret = () => crypto.createHash('sha256').update('tt-session|' + (process.env.SESSION_SECRET || '') + '|' + (process.env.ADMIN_PASSWORD || '') + '|' + (process.env.SUPABASE_SERVICE_KEY || '')).digest();
+const b64 = b => Buffer.from(b).toString('base64url');
+function signToken(user, days = 14) {
+  const body = b64(JSON.stringify({ u: user.id, n: user.nev, r: user.szerep, exp: Date.now() + days * 864e5 }));
+  return 't1.' + body + '.' + b64(crypto.createHmac('sha256', secret()).update(body).digest());
+}
+function readToken(tok) {
+  const [v, body, sig] = String(tok || '').split('.');
+  if (v !== 't1' || !body || !sig) return null;
+  const want = crypto.createHmac('sha256', secret()).update(body).digest(), got = Buffer.from(sig, 'base64url');
+  if (got.length !== want.length || !crypto.timingSafeEqual(got, want)) return null;
+  try { const d = JSON.parse(Buffer.from(body, 'base64url').toString()); return d.exp > Date.now() ? d : null; } catch (e) { return null; }
+}
+
+// Ki küldte a kérést? → { id, nev, szerep } vagy null
+// Fejléc: x-admin-pass = token (vagy régi módon a puszta admin jelszó)
+const userCache = new Map();   // id → { user, at } – rövid ideig, hogy ne kelljen minden kérésnél adatbázis
+async function auth(req) {
+  const h = req.headers['x-admin-pass'];
+  if (!h) return null;
+  if (!String(h).startsWith('t1.')) return passOk(h) ? { id: 'admin', nev: 'admin', szerep: 'admin' } : null;
+  const t = readToken(h); if (!t) return null;
+  if (t.u === 'admin') return { id: 'admin', nev: 'admin', szerep: 'admin' };
+  // Törölt / letiltott felhasználó vagy módosított szerep azonnal (max. 30 mp) érvényesüljön
+  const c = userCache.get(t.u);
+  if (c && Date.now() - c.at < 30000) return c.user;
+  const rows = await sb(`felhasznalok?id=eq.${encodeURIComponent(t.u)}&select=id,nev,szerep,aktiv`, { method: 'GET' });
+  const u = rows[0] && rows[0].aktiv ? { id: rows[0].id, nev: rows[0].nev, szerep: rows[0].szerep } : null;
+  userCache.set(t.u, { user: u, at: Date.now() });
+  return u;
+}
+
+module.exports = { passOk, sb, auth, can, ROLES, hashPw, verifyPw, signToken };

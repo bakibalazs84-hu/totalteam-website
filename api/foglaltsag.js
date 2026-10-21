@@ -8,11 +8,11 @@
 // "kint": a még vissza nem hozott darabszám a kivitelekből (kivitelek tábla)
 // "kezi": az adminban kézzel foglaltnak jelölt tételek (foglalasok tábla, lásd supabase/foglalasok.sql)
 
-const { passOk, sb } = require('./_lib');
+const { sb, auth, can } = require('./_lib');
 
 module.exports = async (req, res) => {
-  const admin = passOk(req.headers['x-admin-pass']);
   try {
+    const user = await auth(req), admin = can(user, 'fog:read');
     if (req.method === 'GET') {
       const [kiv, fog] = await Promise.all([
         sb('kivitelek?select=tetelek&visszahozva_at=is.null&limit=2000', { method: 'GET' }),
@@ -31,7 +31,8 @@ module.exports = async (req, res) => {
 
     res.setHeader('Cache-Control', 'no-store');
     if (!process.env.ADMIN_PASSWORD) return res.status(500).json({ error: 'Az ADMIN_PASSWORD nincs beállítva a Vercelen.' });
-    if (!admin) return res.status(401).json({ error: 'Hibás jelszó.' });
+    if (!user) return res.status(401).json({ error: 'Lejárt vagy hibás belépés.' });
+    if (!can(user, 'fog:write')) return res.status(403).json({ error: 'Ehhez nincs jogosultságod.' });
     let body = req.body;
     if (typeof body === 'string') body = body ? JSON.parse(body) : {};
 

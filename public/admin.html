@@ -261,6 +261,28 @@ table.sum td.num { text-align: right; font-variant-numeric: tabular-nums; font-w
   .cards { grid-template-columns: minmax(0, 1fr); }
 }
 html, body { overflow-x: hidden; }
+.who { font-size: 12px; color: var(--fg-muted); white-space: nowrap; }
+.who b { color: var(--fg); font-weight: 600; }
+.users-grid { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 14px; align-items: start; }
+.uform { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.uform h2 { font-size: 16px; }
+.uform select { height: 38px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 0 8px; font: inherit; color: inherit; }
+.ulist { list-style: none; }
+.urow { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.urow:last-child { border-bottom: 0; }
+.urow .un { flex: 1 1 140px; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.urow .un small { display: block; font-weight: 400; color: var(--fg-muted); font-size: 11px; }
+.urow.off .un { color: var(--fg-muted); text-decoration: line-through; }
+.urow select { height: 30px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font: inherit; font-size: 12px; color: inherit; }
+.urow .acts { display: flex; gap: 12px; align-items: center; }
+.rolehelp { margin-top: 14px; padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 20px; font-size: 12px; color: var(--fg-muted); }
+.rolehelp b { display: block; color: var(--fg); font-size: 13px; }
+@media (max-width: 760px) { .users-grid { grid-template-columns: minmax(0, 1fr); } }
+/* Jogosultság szerint elrejtett vezérlők (a szerver is ellenőrzi) */
+body[data-role="ajanlat"] #scanOpen,
+body[data-role="ajanlat"] [data-act]:not([data-act="print"]),
+body[data-role="ajanlat"] #flist [data-f],
+body[data-role="ajanlat"] [data-bact="kivitel"] { display: none !important; }
 </style>
 </head>
 <body>
@@ -269,7 +291,8 @@ html, body { overflow-x: hidden; }
   <form class="panel login" id="loginForm">
     <div class="logo" style="display:flex;align-items:center;gap:8px"><img src="/img/total-team-logo-clean.png" alt="Total Team" width="49" height="38" style="height:38px;width:auto;display:block">Raktár</div>
     <div><h2>Kivitelek</h2><p class="muted">Saját projektre kivitt tételek nyilvántartása. Belső felület.</p></div>
-    <label class="f">Jelszó<input type="password" id="pass" autocomplete="current-password" required autofocus></label>
+    <label class="f">Felhasználónév<input type="text" id="unev" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="admin" autofocus></label>
+    <label class="f">Jelszó<input type="password" id="pass" autocomplete="current-password" required></label>
     <div class="err" id="loginErr" hidden></div>
     <button class="btn primary" type="submit">Belépés</button>
   </form>
@@ -285,10 +308,12 @@ html, body { overflow-x: hidden; }
         <button class="tab" data-tab="kint" type="button">Kint lévő<span class="n" id="nKint"></span></button>
         <button class="tab" data-tab="elozmeny" type="button">Előzmények</button>
         <button class="tab" data-tab="fog" type="button">Foglaltság<span class="n" id="nFog"></span></button>
+        <button class="tab" data-tab="users" type="button" data-need="users">Felhasználók</button>
       </nav>
       <div class="head-right">
         <button class="btn small primary scan-open" id="scanOpen" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="4" height="4"/><rect x="13" y="13" width="4" height="4"/><path d="M13 7h4v2M7 15v2h2"/></svg>Beolvasás</button>
         <a class="link-btn" href="/cimkek.html" target="_blank" rel="noopener">Címkék ↗</a>
+        <span class="who" id="who"></span>
         <button class="link-btn" id="logout" type="button">Kilépés</button>
       </div>
     </div>
@@ -347,6 +372,30 @@ html, body { overflow-x: hidden; }
       <div class="panel sum-wrap" id="kintSum" hidden></div>
     </section>
 
+    <!-- Felhasználók (csak admin) -->
+    <section id="tab-users" hidden>
+      <div class="users-grid">
+        <form class="panel uform" id="uForm" autocomplete="off">
+          <h2>Új felhasználó</h2>
+          <label class="f">Felhasználónév<input type="text" name="nev" required maxlength="60" autocapitalize="none" spellcheck="false" autocomplete="off"></label>
+          <label class="f">Jelszó (min. 6 karakter)<input type="text" name="jelszo" required minlength="6" autocomplete="new-password"></label>
+          <label class="f">Jogosultság<select name="szerep" required>
+            <option value="raktaros">Raktáros – kivitel, visszavétel, foglaltság</option>
+            <option value="ajanlat">Ajánlatkezelő – bejövő bérlési igények</option>
+            <option value="admin">Admin – minden, felhasználók kezelése is</option></select></label>
+          <div class="err" id="uErr" hidden></div>
+          <button class="btn primary" type="submit">Felhasználó hozzáadása</button>
+          <p class="muted" style="font-size:12px">A jelszót add át neki személyesen. Később itt új jelszót is adhatsz, vagy letilthatod.</p>
+        </form>
+        <div class="panel" style="padding:4px 16px"><ul class="ulist" id="uList"><li class="empty">Betöltés…</li></ul></div>
+      </div>
+      <div class="panel rolehelp">
+        <div><b>Raktáros</b>Új kivitel, kint lévők, visszavétel, beolvasás, foglaltság. A bejövő bérlési igényeket nem látja.</div>
+        <div><b>Ajánlatkezelő</b>Bejövő bérlési igények kezelése (státusz, nyomtatás). A kiviteleket és a foglaltságot csak nézi.</div>
+        <div><b>Admin</b>Mindent lát és kezel, felhasználókat is felvehet. A fő „admin” belépés (eredeti jelszó) mindig megmarad.</div>
+      </div>
+    </section>
+
     <!-- Foglaltság -->
     <section id="tab-fog" hidden>
       <div class="toolbar">
@@ -400,8 +449,12 @@ const huDate = v => v ? v.slice(0, 10).replace(/-/g, '.') + '.' : '';
 function imgFail(img) { const o = img.dataset.orig; if (o && !/\.heic$/i.test(o) && img.src !== o) img.src = o; else img.remove(); }
 const thumb = p => `<div class="thumb${p && p.imgs && p.imgs[0] ? ' zoom" data-zoom="' + esc(p.id) + '" title="Nagyítás' : ''}">${p && p.imgs && p.imgs[0] ? `<img src="${esc(webUrl(p.imgs[0]))}" data-orig="${esc(p.imgs[0])}" alt="" loading="lazy" onerror="imgFail(this)">` : ''}</div>`;
 
-let pass = '';
+// pass = munkamenet token (api/login.js); régi mentett admin jelszónál első induláskor tokenre cserélődik
+let pass = '', ME = null;
 try { pass = sessionStorage.getItem('tt_admin') || ''; } catch (e) {}
+const PERMS = { admin: ['kivitel:write', 'ajanlat', 'users'], raktaros: ['kivitel:write'], ajanlat: ['ajanlat'] };
+const can = p => !!ME && (PERMS[ME.szerep] || []).includes(p);
+const ROLE_NAME = { admin: 'Admin', raktaros: 'Raktáros', ajanlat: 'Ajánlatkezelő' };
 let PRODUCTS = [], byId = new Map(), rows = [];
 let sel = new Map();          // id → qty (új kivitel)
 let pcat = 'Minden', pshown = 60, kmode = 'proj';
@@ -420,7 +473,7 @@ async function api(method, query, body) {
   const r = await fetch(API + (query || ''), { method, headers: { 'Content-Type': 'application/json', 'x-admin-pass': pass }, body: body ? JSON.stringify(body) : undefined });
   if (r.status === 204) return null;
   let data = null; try { data = await r.json(); } catch (e) {}
-  if (r.status === 401) { logout(); throw new Error('Hibás jelszó.'); }
+  if (r.status === 401) { logout(); throw new Error('A belépés lejárt, lépj be újra.'); }
   if (!r.ok) throw new Error((data && data.error) || `Hiba (${r.status})`);
   return data;
 }
@@ -444,19 +497,38 @@ function outMap(excludeId) {
 }
 
 // ── Belépés
-async function login(p) {
-  pass = p;
-  await api('GET');                       // jelszó ellenőrzés
-  try { sessionStorage.setItem('tt_admin', p); } catch (e) {}
+async function login(nev, jelszo) {
+  const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nev, jelszo }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || `Hiba (${r.status})`);
+  pass = d.token; ME = d.user;
+  try { sessionStorage.setItem('tt_admin', pass); localStorage.setItem('tt_unev', nev); } catch (e) {}
+}
+async function resume() {                 // mentett belépés ebben a böngészőfülben
+  if (!pass.startsWith('t1.')) return login('admin', pass);   // régi: puszta admin jelszó volt elmentve
+  const r = await fetch('/api/login', { headers: { 'x-admin-pass': pass }, cache: 'no-store' });
+  if (!r.ok) throw new Error('lejárt');
+  ME = (await r.json()).user;
+}
+function applyRole() {
+  document.body.dataset.role = ME.szerep;
+  $('who').innerHTML = `<b>${esc(ME.nev)}</b> · ${ROLE_NAME[ME.szerep] || ME.szerep}`;
+  const show = { bejovo: can('ajanlat'), uj: can('kivitel:write'), kint: true, elozmeny: true, fog: true, users: can('users') };
+  document.querySelectorAll('.tab').forEach(t => { t.hidden = !show[t.dataset.tab]; });
+  const cur = document.querySelector('.tab.active');
+  showTab(cur && !cur.hidden ? cur.dataset.tab : (show.uj ? 'uj' : show.bejovo ? 'bejovo' : 'kint'));
+  // Új kivitelnél a „Ki vitte ki” alapból a belépett felhasználó
+  const fl = nf.elements.felelos; if (!fl.value && ME.nev !== 'admin') fl.value = ME.nev;
 }
 function logout() {
-  pass = ''; try { sessionStorage.removeItem('tt_admin'); } catch (e) {}
-  $('appView').hidden = true; $('loginView').hidden = false; $('pass').value = ''; $('pass').focus();
+  pass = ''; ME = null; try { sessionStorage.removeItem('tt_admin'); } catch (e) {}
+  $('appView').hidden = true; $('loginView').hidden = false; $('pass').value = ''; ($('unev').value ? $('pass') : $('unev')).focus();
 }
+try { $('unev').value = localStorage.getItem('tt_unev') || ''; } catch (e) {}
 $('loginForm').addEventListener('submit', async e => {
   e.preventDefault(); showErr($('loginErr'));
   const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Belépés…';
-  try { await login($('pass').value); await start(); }
+  try { await login($('unev').value.trim(), $('pass').value); await start(); }
   catch (err) { showErr($('loginErr'), err.message); $('loginView').hidden = false; $('appView').hidden = true; }
   finally { btn.disabled = false; btn.textContent = 'Belépés'; }
 });
@@ -464,10 +536,11 @@ $('logout').onclick = logout;
 
 async function start() {
   $('loginView').hidden = true; $('appView').hidden = false;
+  applyRole();
   try { await Promise.all([loadProducts(), refresh()]); } catch (e) { showErr($('appErr'), e.message); }
   renderPicker(); renderSel(); renderLists(); renderBej();
 }
-async function refresh() { rows = (await api('GET')) || []; rows.forEach(r => { r.tetelek = r.tetelek || []; }); renderLists(); loadKezi(); loadBej(); }
+async function refresh() { rows = (await api('GET')) || []; rows.forEach(r => { r.tetelek = r.tetelek || []; }); renderLists(); loadKezi(); if (can('ajanlat')) loadBej(); if (can('users')) loadUsers(); }
 async function loadKezi() {
   try {
     // Háttérben töltődik, hogy a lista ne várjon rá (a szerver néha lassan ébred)
@@ -484,7 +557,7 @@ async function loadKezi() {
 document.querySelector('.tabs').addEventListener('click', e => {
   const b = e.target.closest('.tab'); if (!b) return;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === b));
-  ['bejovo', 'uj', 'kint', 'elozmeny', 'fog'].forEach(k => { $('tab-' + k).hidden = k !== b.dataset.tab; });
+  ['bejovo', 'uj', 'kint', 'elozmeny', 'fog', 'users'].forEach(k => { $('tab-' + k).hidden = k !== b.dataset.tab; });
   window.scrollTo(0, 0);
 });
 
@@ -807,7 +880,7 @@ const scanCanvas = document.createElement('canvas'), scanCtx = scanCanvas.getCon
 
 function showTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
-  ['bejovo', 'uj', 'kint', 'elozmeny', 'fog'].forEach(k => { $('tab-' + k).hidden = k !== name; });
+  ['bejovo', 'uj', 'kint', 'elozmeny', 'fog', 'users'].forEach(k => { $('tab-' + k).hidden = k !== name; });
 }
 function codeFromText(text) {
   let s = String(text || '').trim();
@@ -918,8 +991,8 @@ $('scanManual').addEventListener('submit', async e => { e.preventDefault(); cons
 
 // Indulás: ha van elmentett jelszó ebben a böngészőfülben, rögtön belép
 (async () => {
-  if (pass) { try { await login(pass); await start(); return; } catch (e) {} }
-  $('loginView').hidden = false; $('pass').focus();
+  if (pass) { try { await resume(); await start(); return; } catch (e) { pass = ''; try { sessionStorage.removeItem('tt_admin'); } catch (x) {} } }
+  $('loginView').hidden = false; ($('unev').value ? $('pass') : $('unev')).focus();
 })();
 
 // Kép nagyítása: bármelyik kis képre kattintva (kivitel, kint lévő, visszavétel, választó lista)
@@ -1168,6 +1241,64 @@ $('bejCards').addEventListener('click', async e => {
 $('bmode').addEventListener('click', e => { const x = e.target.closest('button'); if (!x) return; bmode = x.dataset.m; $('bmode').querySelectorAll('button').forEach(y => y.classList.toggle('active', y === x)); renderBej(); });
 let bqT; $('bq').addEventListener('input', () => { clearTimeout(bqT); bqT = setTimeout(renderBej, 120); });
 $('breload').onclick = loadBej;
+
+// ── Felhasználók (csak admin) – api/felhasznalok.js
+let USERS = [];
+async function uapi(method, query, body) {
+  const r = await fetch('/api/felhasznalok' + (query || ''), { method, headers: { 'Content-Type': 'application/json', 'x-admin-pass': pass }, body: body ? JSON.stringify(body) : undefined });
+  if (r.status === 204) return null;
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || `Hiba (${r.status})`);
+  return d;
+}
+async function loadUsers() {
+  try { USERS = await uapi('GET') || []; renderUsers(); }
+  catch (e) { $('uList').innerHTML = `<li class="empty">${esc(e.message)}</li>`; }
+}
+function renderUsers() {
+  const opt = v => Object.entries(ROLE_NAME).map(([k, n]) => `<option value="${k}"${k === v ? ' selected' : ''}>${n}</option>`).join('');
+  $('uList').innerHTML = `<li class="urow"><div class="un">admin<small>fő admin belépés (eredeti jelszó) – nem törölhető</small></div><span class="pill ok">Admin</span></li>` +
+    (USERS.length ? USERS.map(u => `<li class="urow ${u.aktiv ? '' : 'off'}" data-id="${esc(u.id)}">
+      <div class="un">${esc(u.nev)}<small>${u.aktiv ? 'aktív' : 'letiltva'} · felvéve ${huDate(u.created_at)}</small></div>
+      <select data-u="szerep" aria-label="Jogosultság">${opt(u.szerep)}</select>
+      <div class="acts"><button class="link-btn" type="button" data-u="pw">Új jelszó</button>
+        <button class="link-btn" type="button" data-u="aktiv">${u.aktiv ? 'Letiltás' : 'Engedélyezés'}</button>
+        <button class="link-btn danger" type="button" data-u="del">Törlés</button></div></li>`).join('')
+    : '<li class="empty">Még nincs további felhasználó. Bal oldalt vehetsz fel.</li>');
+}
+$('uForm').addEventListener('submit', async e => {
+  e.preventDefault(); showErr($('uErr'));
+  const f = e.target.elements, btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  try {
+    const u = await uapi('POST', '', { nev: f.nev.value.trim(), jelszo: f.jelszo.value, szerep: f.szerep.value });
+    USERS.push(u); USERS.sort((a, b) => a.nev.localeCompare(b.nev, 'hu')); renderUsers();
+    toast(`${u.nev} felvéve (${ROLE_NAME[u.szerep]})`); e.target.reset();
+  } catch (err) { showErr($('uErr'), err.message); }
+  finally { btn.disabled = false; }
+});
+$('uList').addEventListener('change', async e => {
+  const s = e.target.closest('select[data-u="szerep"]'); if (!s) return;
+  const id = s.closest('.urow').dataset.id, u = USERS.find(x => x.id === id);
+  try { Object.assign(u, await uapi('PATCH', '?id=' + encodeURIComponent(id), { szerep: s.value })); toast(`${u.nev}: ${ROLE_NAME[u.szerep]}`); }
+  catch (err) { toast('Hiba: ' + err.message); } renderUsers();
+});
+$('uList').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-u]'); if (!b) return;
+  const id = b.closest('.urow').dataset.id, u = USERS.find(x => x.id === id); if (!u) return;
+  try {
+    if (b.dataset.u === 'pw') {
+      const pw = prompt(`Új jelszó ${u.nev} számára (min. 6 karakter):`); if (!pw) return;
+      await uapi('PATCH', '?id=' + encodeURIComponent(id), { jelszo: pw }); toast(`${u.nev}: új jelszó beállítva`);
+    } else if (b.dataset.u === 'aktiv') {
+      Object.assign(u, await uapi('PATCH', '?id=' + encodeURIComponent(id), { aktiv: !u.aktiv })); toast(`${u.nev}: ${u.aktiv ? 'engedélyezve' : 'letiltva'}`);
+    } else if (b.dataset.u === 'del') {
+      if (!confirm(`Törlöd ${u.nev} felhasználót?`)) return;
+      await uapi('DELETE', '?id=' + encodeURIComponent(id)); USERS = USERS.filter(x => x !== u); toast(`${u.nev} törölve`);
+    }
+  } catch (err) { toast('Hiba: ' + err.message); }
+  renderUsers();
+});
 </script>
 <script src="/print-list.js" defer></script>
 </body>

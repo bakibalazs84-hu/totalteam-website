@@ -12,7 +12,7 @@
 // PATCH  /api/kivitel?id=…         → módosítás { tetelek?, visszahozva_at?, … }
 // DELETE /api/kivitel?id=…         → törlés (elírt rögzítés javítására)
 
-const { passOk, sb } = require('./_lib');
+const { sb, auth, can } = require('./_lib');
 
 const TABLE = 'kivitelek';
 const FIELDS = ['projekt', 'felelos', 'kivitel_napja', 'vissza_tervezett', 'megjegyzes', 'tetelek', 'visszahozva_at'];
@@ -48,7 +48,9 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Robots-Tag', 'noindex');
   if (!process.env.ADMIN_PASSWORD) return res.status(500).json({ error: 'Az ADMIN_PASSWORD nincs beállítva a Vercelen.' });
-  if (!passOk(req.headers['x-admin-pass'])) return res.status(401).json({ error: 'Hibás jelszó.' });
+  let user; try { user = await auth(req); } catch (e) { return res.status(502).json({ error: e.message }); }
+  if (!user) return res.status(401).json({ error: 'Lejárt vagy hibás belépés.' });
+  if (!can(user, req.method === 'GET' ? 'kivitel:read' : 'kivitel:write')) return res.status(403).json({ error: 'Ehhez nincs jogosultságod.' });
 
   try {
     let body = req.body;
