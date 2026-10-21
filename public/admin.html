@@ -390,7 +390,7 @@ body[data-role="ajanlat"] [data-bact="kivitel"] { display: none !important; }
             <option value="admin">Admin – minden, felhasználók kezelése is</option></select></label>
           <div class="err" id="uErr" hidden></div>
           <button class="btn primary" type="submit">Meghívó küldése</button>
-          <p class="muted" style="font-size:12px">A leveleződ megnyílik a kész meghívóval – csak el kell küldeni. A meghívott a linken maga választ felhasználónevet és jelszót. A link 7 napig érvényes.</p>
+          <p class="muted" style="font-size:12px">Utána Gmailben, Outlookban vagy a levelezőprogramodban megnyílik a kész meghívó – csak el kell küldeni. A meghívott a linken maga választ felhasználónevet és jelszót. A link 7 napig érvényes.</p>
           <div class="invbox" id="invBox" hidden></div>
         </form>
         <div class="panel" style="padding:4px 16px"><ul class="ulist" id="uList"><li class="empty">Betöltés…</li></ul></div>
@@ -1262,24 +1262,32 @@ async function loadUsers() {
   try { USERS = await uapi('GET') || []; renderUsers(); }
   catch (e) { $('uList').innerHTML = `<li class="empty">${esc(e.message)}</li>`; }
 }
-function inviteMail(u, reset) {
+function inviteText(u, reset) {
   const who = ME && ME.nev !== 'admin' ? ME.nev : 'a Total Team';
   const subj = reset ? 'Total Team Raktár – új jelszó beállítása' : 'Meghívó – Total Team Raktár';
   const body = reset
     ? `Szia!\n\nEzen a linken új jelszót állíthatsz be a Total Team raktár felületéhez:\n${u.link}\n\nA link 7 napig érvényes.\n\nÜdv,\n${who}`
     : `Szia!\n\nMeghívtalak a Total Team raktár belső felületére (${ROLE_NAME[u.szerep]} jogosultsággal).\n\nEzen a linken válassz magadnak felhasználónevet és jelszót:\n${u.link}\n\nA link 7 napig érvényes. Utána itt tudsz belépni: ${location.origin}/admin.html\n\nÜdv,\n${who}`;
-  return `mailto:${encodeURIComponent(u.email)}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+  return { subj, body };
 }
 function showInvite(u, reset) {
-  const box = $('invBox'), mail = inviteMail(u, reset);
+  const box = $('invBox'), { subj, body } = inviteText(u, reset);
+  const q = s => encodeURIComponent(s);
+  const gmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${q(u.email)}&su=${q(subj)}&body=${q(body)}`;
+  const outlook = `https://outlook.live.com/mail/0/deeplink/compose?to=${q(u.email)}&subject=${q(subj)}&body=${q(body)}`;
+  const mail = `mailto:${q(u.email)}?subject=${q(subj)}&body=${q(body)}`;
   box.innerHTML = `<b>${reset ? 'Jelszó-visszaállító link' : 'Meghívó'}: ${esc(u.email)}</b>
-    <span>Ha nem nyílt meg a levelező, másold ki a linket és küldd el neki (pl. üzenetben):</span>
+    <span>Küldd el a meghívót – válaszd, miben írsz levelet:</span>
+    <div class="row"><a class="btn small primary" href="${esc(gmail)}" target="_blank" rel="noopener">Gmail-ben</a><a class="btn small" href="${esc(outlook)}" target="_blank" rel="noopener">Outlook-ban</a><a class="btn small" href="${esc(mail)}">Levelezőprogramban</a></div>
+    <span>Vagy másold ki és küldd el bárhogy (pl. üzenetben):</span>
     <input type="text" readonly value="${esc(u.link)}" onclick="this.select()">
-    <div class="row"><a class="btn small primary" href="${esc(mail)}">Levél megnyitása</a><button class="btn small" type="button" id="invCopy">Link másolása</button><button class="link-btn" type="button" id="invClose">Bezárás</button></div>`;
+    <div class="row"><button class="btn small" type="button" id="invCopyAll">Teljes szöveg másolása</button><button class="btn small" type="button" id="invCopy">Csak a link</button><button class="link-btn" type="button" id="invClose">Bezárás</button></div>`;
   box.hidden = false;
-  $('invCopy').onclick = async () => { try { await navigator.clipboard.writeText(u.link); toast('Link kimásolva'); } catch (e) { box.querySelector('input').select(); } };
+  const copy = async (txt, msg) => { try { await navigator.clipboard.writeText(txt); toast(msg); } catch (e) { box.querySelector('input').select(); toast('Másold ki a linket kézzel (Ctrl+C)'); } };
+  $('invCopy').onclick = () => copy(u.link, 'Link kimásolva');
+  $('invCopyAll').onclick = () => copy(`${subj}\n\n${body}`, 'Meghívó szövege kimásolva');
   $('invClose').onclick = () => { box.hidden = true; };
-  location.href = mail;
+  box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 function renderUsers() {
   const opt = v => Object.entries(ROLE_NAME).map(([k, n]) => `<option value="${k}"${k === v ? ' selected' : ''}>${n}</option>`).join('');
