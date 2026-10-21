@@ -19,3 +19,6 @@ create index if not exists ajanlatkeresek_created_idx on public.ajanlatkeresek (
 
 -- Csak a szerver (service_role kulcs) érheti el: RLS bekapcsolva, nyilvános szabály nincs
 alter table public.ajanlatkeresek enable row level security;
+
+-- Az igénylő e-mail címe (nem kötelező) – ide megy a visszaigazolás, és erre lehet válaszolni
+alter table public.ajanlatkeresek add column if not exists email text;

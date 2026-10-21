@@ -270,6 +270,7 @@ html, body { overflow-x: hidden; }
 .invbox input { height: 32px; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius); padding: 0 8px; background: var(--surface); color: inherit; width: 100%; }
 .invbox .row { display: flex; gap: 8px; flex-wrap: wrap; }
 .pill.inv { background: var(--warn-bg); color: var(--warn); }
+.invbox .warn { color: var(--bad); }
 .uform select { height: 38px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 0 8px; font: inherit; color: inherit; }
 .ulist { list-style: none; }
 .urow { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
@@ -390,7 +391,7 @@ body[data-role="ajanlat"] [data-bact="kivitel"] { display: none !important; }
             <option value="admin">Admin – minden, felhasználók kezelése is</option></select></label>
           <div class="err" id="uErr" hidden></div>
           <button class="btn primary" type="submit">Meghívó küldése</button>
-          <p class="muted" style="font-size:12px">Utána Gmailben, Outlookban vagy a levelezőprogramodban megnyílik a kész meghívó – csak el kell küldeni. A meghívott a linken maga választ felhasználónevet és jelszót. A link 7 napig érvényes.</p>
+          <p class="muted" style="font-size:12px">A meghívót a rendszer küldi ki az info@totalteam.hu címről. A meghívott a linken maga választ felhasználónevet és jelszót. A link 7 napig érvényes.</p>
           <div class="invbox" id="invBox" hidden></div>
         </form>
         <div class="panel" style="padding:4px 16px"><ul class="ulist" id="uList"><li class="empty">Betöltés…</li></ul></div>
@@ -1272,20 +1273,26 @@ function inviteText(u, reset) {
 }
 function showInvite(u, reset) {
   const box = $('invBox'), { subj, body } = inviteText(u, reset);
-  const q = s => encodeURIComponent(s);
-  const gmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${q(u.email)}&su=${q(subj)}&body=${q(body)}`;
-  const outlook = `https://outlook.live.com/mail/0/deeplink/compose?to=${q(u.email)}&subject=${q(subj)}&body=${q(body)}`;
-  const mail = `mailto:${q(u.email)}?subject=${q(subj)}&body=${q(body)}`;
-  box.innerHTML = `<b>${reset ? 'Jelszó-visszaállító link' : 'Meghívó'}: ${esc(u.email)}</b>
-    <span>Küldd el a meghívót – válaszd, miben írsz levelet:</span>
-    <div class="row"><a class="btn small primary" href="${esc(gmail)}" target="_blank" rel="noopener">Gmail-ben</a><a class="btn small" href="${esc(outlook)}" target="_blank" rel="noopener">Outlook-ban</a><a class="btn small" href="${esc(mail)}">Levelezőprogramban</a></div>
-    <span>Vagy másold ki és küldd el bárhogy (pl. üzenetben):</span>
-    <input type="text" readonly value="${esc(u.link)}" onclick="this.select()">
-    <div class="row"><button class="btn small" type="button" id="invCopyAll">Teljes szöveg másolása</button><button class="btn small" type="button" id="invCopy">Csak a link</button><button class="link-btn" type="button" id="invClose">Bezárás</button></div>`;
+  const copy = async (txt, msg) => { try { await navigator.clipboard.writeText(txt); toast(msg); } catch (e) { const i = box.querySelector('input'); if (i) i.select(); toast('Másold ki kézzel (Ctrl+C)'); } };
+  if (u.elkuldve) {
+    // Automatikusan elment az info@totalteam.hu címről
+    box.innerHTML = `<b>✓ ${reset ? 'Jelszó-visszaállító levél' : 'Meghívó'} elküldve: ${esc(u.email)}</b>
+      <span>A levél az info@totalteam.hu címről ment ki. Ha nem érkezne meg (spam mappa!), a link itt is megvan:</span>
+      <input type="text" readonly value="${esc(u.link)}" onclick="this.select()">
+      <div class="row"><button class="btn small" type="button" id="invCopy">Link másolása</button><button class="link-btn" type="button" id="invClose">Bezárás</button></div>`;
+  } else {
+    // A levélküldés még nincs beállítva (vagy hiba volt) – kézi küldés
+    const q = s => encodeURIComponent(s);
+    const gmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${q(u.email)}&su=${q(subj)}&body=${q(body)}`;
+    box.innerHTML = `<b>${reset ? 'Jelszó-visszaállító link' : 'Meghívó'}: ${esc(u.email)}</b>
+      ${u.levelHiba ? `<span class="warn">Az automatikus küldés nem sikerült: ${esc(u.levelHiba)}</span>` : '<span>Az automatikus levélküldés még nincs bekapcsolva – küldd el kézzel:</span>'}
+      <div class="row"><a class="btn small primary" href="${esc(gmail)}" target="_blank" rel="noopener">Gmail-ben</a><button class="btn small" type="button" id="invCopyAll">Teljes szöveg másolása</button></div>
+      <input type="text" readonly value="${esc(u.link)}" onclick="this.select()">
+      <div class="row"><button class="btn small" type="button" id="invCopy">Csak a link</button><button class="link-btn" type="button" id="invClose">Bezárás</button></div>`;
+    $('invCopyAll').onclick = () => copy(`${subj}\n\n${body}`, 'Meghívó szövege kimásolva');
+  }
   box.hidden = false;
-  const copy = async (txt, msg) => { try { await navigator.clipboard.writeText(txt); toast(msg); } catch (e) { box.querySelector('input').select(); toast('Másold ki a linket kézzel (Ctrl+C)'); } };
   $('invCopy').onclick = () => copy(u.link, 'Link kimásolva');
-  $('invCopyAll').onclick = () => copy(`${subj}\n\n${body}`, 'Meghívó szövege kimásolva');
   $('invClose').onclick = () => { box.hidden = true; };
   box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
@@ -1311,7 +1318,7 @@ $('uForm').addEventListener('submit', async e => {
   btn.disabled = true;
   try {
     const u = await uapi('POST', '', { email: f.email.value.trim(), szerep: f.szerep.value });
-    USERS.push(u); renderUsers(); toast(`Meghívó elkészült: ${u.email}`);
+    USERS.push(u); renderUsers(); toast(u.elkuldve ? `Meghívó elküldve: ${u.email}` : `Meghívó elkészült: ${u.email}`);
     f.email.value = ''; showInvite(u, false);
   } catch (err) { showErr($('uErr'), err.message); }
   finally { btn.disabled = false; }

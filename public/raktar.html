@@ -299,6 +299,7 @@ button { font-family: inherit; }
       <form class="cart-form" id="cartForm" autocomplete="on">
         <label>Név *<input name="nev" required autocomplete="name"></label>
         <label>Telefon<input name="tel" type="tel" autocomplete="tel"></label>
+        <label class="full">E-mail <small style="font-weight:400;opacity:.75">(ide küldjük a visszaigazolást)</small><input name="email" type="email" autocomplete="email"></label>
         <label class="full">Produkció / cég<input name="ceg" autocomplete="organization"></label>
         <label>Felvétel napja<input name="tol" type="date"></label>
         <label>Visszahozás napja<input name="ig" type="date"></label>
@@ -609,8 +610,8 @@ document.getElementById('cartClear').onclick = () => { if (confirm('Biztosan ür
 
 // Űrlap mezők megjegyzése (név, telefon, cég) a következő alkalomra
 const form = document.getElementById('cartForm');
-try { const s = JSON.parse(localStorage.getItem('tt_contact') || '{}'); ['nev', 'tel', 'ceg'].forEach(k => { if (s[k]) form.elements[k].value = s[k]; }); } catch (e) {}
-form.addEventListener('input', () => { try { localStorage.setItem('tt_contact', JSON.stringify({ nev: form.elements.nev.value, tel: form.elements.tel.value, ceg: form.elements.ceg.value })); } catch (e) {} });
+try { const s = JSON.parse(localStorage.getItem('tt_contact') || '{}'); ['nev', 'tel', 'ceg', 'email'].forEach(k => { if (s[k]) form.elements[k].value = s[k]; }); } catch (e) {}
+form.addEventListener('input', () => { try { localStorage.setItem('tt_contact', JSON.stringify({ nev: form.elements.nev.value, tel: form.elements.tel.value, ceg: form.elements.ceg.value, email: form.elements.email.value })); } catch (e) {} });
 
 const huDate = v => v ? v.replace(/-/g, '.') + '.' : '';
 document.getElementById('cartPrint').onclick = () => {
@@ -631,6 +632,7 @@ function cartText() {
     'Bérlési igény – Total Team Raktár', '',
     `Név: ${f.nev.value.trim()}`,
     f.tel.value.trim() ? `Telefon: ${f.tel.value.trim()}` : null,
+    f.email.value.trim() ? `E-mail: ${f.email.value.trim()}` : null,
     f.ceg.value.trim() ? `Produkció / cég: ${f.ceg.value.trim()}` : null,
     (f.tol.value || f.ig.value) ? `Időszak: ${huDate(f.tol.value) || '?'} – ${huDate(f.ig.value) || '?'}` : null,
     '', `Tételek (${ids.length} tétel, ${total} db):`, ...lines,
@@ -646,21 +648,23 @@ document.getElementById('cartSend').onclick = async () => {
   const btn = document.getElementById('cartSend'); btn.disabled = true; btn.textContent = 'Küldés…';
   // 1) Elmentjük a kérést → képes lista oldal + megjelenik az adminban bejövő projektként
   // 2) Megnyílik a levelező, a levélben a képes lista linkje
-  let link = '';
+  let link = '', sent = false;
   try {
     const r = await fetch('/api/ajanlat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-      nev: f.nev.value, tel: f.tel.value, ceg: f.ceg.value, tol: f.tol.value, ig: f.ig.value, megjegyzes: f.megj.value, website: f.website.value,
+      nev: f.nev.value, tel: f.tel.value, email: f.email.value, ceg: f.ceg.value, tol: f.tol.value, ig: f.ig.value, megjegyzes: f.megj.value, website: f.website.value,
       tetelek: cartIds().map(id => { const p = byId(id); return { id, code: p.code, name: p.name, dims: p.dims, qty: cart[id] }; }),
     }) });
-    const d = await r.json(); if (r.ok && d.id) link = location.origin + '/ajanlat.html?id=' + d.id;
+    const d = await r.json(); if (r.ok && d.id) { link = location.origin + '/ajanlat.html?id=' + d.id; sent = !!d.ertesitve; }
   } catch (e) { /* ha a mentés nem sikerül, a levél akkor is elmegy a szöveges listával */ }
   btn.disabled = false; btn.textContent = 'Bérlési igény küldése';
   const body = link ? `Képes lista a kért tételekről:\n${link}\n\n${cartText()}` : cartText();
   if (link) {
     const ok = document.getElementById('cartDone');
-    ok.innerHTML = `✓ Megkaptuk a bérlési igényed. <a href="${link}" target="_blank" rel="noopener">Képes lista megnyitása</a>`;
+    ok.innerHTML = `✓ Megkaptuk a bérlési igényed, hamarosan jelentkezünk.${sent && f.email.value ? ' A visszaigazolást elküldtük e-mailben.' : ''} <a href="${link}" target="_blank" rel="noopener">Képes lista megnyitása</a>`;
     ok.hidden = false;
   }
+  // Automatikus értesítés ment ki → nem kell a levelező; különben (vagy hiba esetén) a látogató levelezője nyílik meg
+  if (sent) { toast('Bérlési igény elküldve'); return; }
   location.href = `mailto:info@totalteam.hu?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
 };
 document.getElementById('cartCopy').onclick = async () => {
