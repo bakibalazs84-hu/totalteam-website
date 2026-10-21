@@ -1,7 +1,7 @@
 // Belépés az admin felületre
 // POST /api/login { nev, jelszo } → { token, user }
 //   – "admin" (vagy üres név) + az ADMIN_PASSWORD: a fő admin
-//   – egyébként a felhasznalok táblából (az adminban, a Felhasználók fülön vehetők fel)
+//   – egyébként a felhasznalok táblából, névvel vagy e-mail címmel (meghívóval regisztráltak)
 // GET  /api/login (x-admin-pass: token) → { user } – ki vagyok, érvényes-e még a belépés
 
 const { passOk, sb, auth, verifyPw, signToken } = require('./_lib');
@@ -25,11 +25,12 @@ module.exports = async (req, res) => {
       const user = { id: 'admin', nev: 'admin', szerep: 'admin' };
       return res.status(200).json({ token: signToken(user), user });
     }
-    const like = nev.replace(/[\\%_*]/g, c => '\\' + c);
+    // Név vagy e-mail cím is jó
+    const like = nev.replace(/[\\%_*]/g, c => '\\' + c), col = nev.includes('@') ? 'email' : 'nev';
     let rows;
-    try { rows = await sb(`felhasznalok?nev=ilike.${encodeURIComponent(like)}&select=id,nev,szerep,aktiv,jelszo_hash`, { method: 'GET' }); }
+    try { rows = await sb(`felhasznalok?${col}=ilike.${encodeURIComponent(like)}&select=id,nev,email,szerep,aktiv,jelszo_hash`, { method: 'GET' }); }
     catch (e) { if (e.missingTable) return fail(res); throw e; }
-    const u = rows.find(r => r.nev.toLowerCase() === nev.toLowerCase());
+    const u = rows.find(r => String(r[col] || '').toLowerCase() === nev.toLowerCase());
     if (!u || !u.aktiv || !verifyPw(jelszo, u.jelszo_hash)) return fail(res);
     const user = { id: u.id, nev: u.nev, szerep: u.szerep };
     return res.status(200).json({ token: signToken(user), user });

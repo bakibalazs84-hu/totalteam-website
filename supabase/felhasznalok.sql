@@ -14,3 +14,10 @@ create unique index if not exists felhasznalok_nev_idx on public.felhasznalok (l
 
 -- Csak a szerver (service_role kulcs) érheti el: RLS bekapcsolva, nyilvános szabály nincs
 alter table public.felhasznalok enable row level security;
+
+-- Meghívás e-mailben: az admin e-mail címet + jogosultságot ad meg, a meghívott maga választ nevet és jelszót
+alter table public.felhasznalok add column if not exists email text;
+alter table public.felhasznalok add column if not exists meghivo_hash text;          -- a meghívó link titkának sha256-ja
+alter table public.felhasznalok add column if not exists meghivo_lejar timestamptz;
+alter table public.felhasznalok alter column jelszo_hash drop not null;            -- meghívott, még nem regisztrált: nincs jelszó
+create unique index if not exists felhasznalok_email_idx on public.felhasznalok (lower(email)) where email is not null;

@@ -61,7 +61,7 @@ h2 { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
 .btn.primary:disabled { background: var(--pill-bg); border-color: var(--pill-bg); color: var(--fg-muted); cursor: not-allowed; }
 .btn.small { height: 30px; padding: 0 10px; font-size: 12px; }
 .btn.ok { background: var(--ok-bg); border-color: transparent; color: var(--ok); font-weight: 600; }
-input[type=text], input[type=search], input[type=password], input[type=date], textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); font-size: 13px; }
+input[type=text], input[type=email], input[type=search], input[type=password], input[type=date], textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); font-size: 13px; }
 input:focus, textarea:focus { outline: none; border-color: var(--accent); }
 label.f { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--fg-muted); }
 .err { background: var(--bad-bg); color: var(--bad); padding: 10px 14px; border-radius: var(--radius); font-size: 13px; white-space: pre-line; }
@@ -266,6 +266,10 @@ html, body { overflow-x: hidden; }
 .users-grid { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 14px; align-items: start; }
 .uform { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .uform h2 { font-size: 16px; }
+.invbox { background: var(--accent-bg); border-radius: var(--radius); padding: 10px 12px; font-size: 12px; display: flex; flex-direction: column; gap: 8px; }
+.invbox input { height: 32px; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius); padding: 0 8px; background: var(--surface); color: inherit; width: 100%; }
+.invbox .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill.inv { background: var(--warn-bg); color: var(--warn); }
 .uform select { height: 38px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 0 8px; font: inherit; color: inherit; }
 .ulist { list-style: none; }
 .urow { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
@@ -291,10 +295,11 @@ body[data-role="ajanlat"] [data-bact="kivitel"] { display: none !important; }
   <form class="panel login" id="loginForm">
     <div class="logo" style="display:flex;align-items:center;gap:8px"><img src="/img/total-team-logo-clean.png" alt="Total Team" width="49" height="38" style="height:38px;width:auto;display:block">Raktár</div>
     <div><h2>Kivitelek</h2><p class="muted">Saját projektre kivitt tételek nyilvántartása. Belső felület.</p></div>
-    <label class="f">Felhasználónév<input type="text" id="unev" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="admin" autofocus></label>
+    <label class="f">Felhasználónév vagy e-mail<input type="text" id="unev" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="admin" autofocus></label>
     <label class="f">Jelszó<input type="password" id="pass" autocomplete="current-password" required></label>
     <div class="err" id="loginErr" hidden></div>
     <button class="btn primary" type="submit">Belépés</button>
+    <p class="muted" style="font-size:12px">Elfelejtetted a jelszavad? Szólj annak, aki meghívott – küld egy új jelszó-beállító linket.</p>
   </form>
 </div>
 
@@ -375,24 +380,24 @@ body[data-role="ajanlat"] [data-bact="kivitel"] { display: none !important; }
     <!-- Felhasználók (csak admin) -->
     <section id="tab-users" hidden>
       <div class="users-grid">
-        <form class="panel uform" id="uForm" autocomplete="off">
-          <h2>Új felhasználó</h2>
-          <label class="f">Felhasználónév<input type="text" name="nev" required maxlength="60" autocapitalize="none" spellcheck="false" autocomplete="off"></label>
-          <label class="f">Jelszó (min. 6 karakter)<input type="text" name="jelszo" required minlength="6" autocomplete="new-password"></label>
+        <form class="panel uform" id="uForm" autocomplete="off" novalidate>
+          <h2>Meghívás</h2>
+          <label class="f">E-mail cím<input type="email" name="email" required maxlength="200" autocomplete="off" placeholder="nev@pelda.hu"></label>
           <label class="f">Jogosultság<select name="szerep" required>
             <option value="raktaros">Raktáros – kivitel, visszavétel, foglaltság</option>
             <option value="ajanlat">Ajánlatkezelő – bejövő bérlési igények</option>
             <option value="admin">Admin – minden, felhasználók kezelése is</option></select></label>
           <div class="err" id="uErr" hidden></div>
-          <button class="btn primary" type="submit">Felhasználó hozzáadása</button>
-          <p class="muted" style="font-size:12px">A jelszót add át neki személyesen. Később itt új jelszót is adhatsz, vagy letilthatod.</p>
+          <button class="btn primary" type="submit">Meghívó küldése</button>
+          <p class="muted" style="font-size:12px">A leveleződ megnyílik a kész meghívóval – csak el kell küldeni. A meghívott a linken maga választ felhasználónevet és jelszót. A link 7 napig érvényes.</p>
+          <div class="invbox" id="invBox" hidden></div>
         </form>
         <div class="panel" style="padding:4px 16px"><ul class="ulist" id="uList"><li class="empty">Betöltés…</li></ul></div>
       </div>
       <div class="panel rolehelp">
         <div><b>Raktáros</b>Új kivitel, kint lévők, visszavétel, beolvasás, foglaltság. A bejövő bérlési igényeket nem látja.</div>
         <div><b>Ajánlatkezelő</b>Bejövő bérlési igények kezelése (státusz, nyomtatás). A kiviteleket és a foglaltságot csak nézi.</div>
-        <div><b>Admin</b>Mindent lát és kezel, felhasználókat is felvehet. A fő „admin” belépés (eredeti jelszó) mindig megmarad.</div>
+        <div><b>Admin</b>Mindent lát és kezel, felhasználókat is meghívhat. A fő „admin” belépés (eredeti jelszó) mindig megmarad.</div>
       </div>
     </section>
 
@@ -1243,6 +1248,7 @@ let bqT; $('bq').addEventListener('input', () => { clearTimeout(bqT); bqT = setT
 $('breload').onclick = loadBej;
 
 // ── Felhasználók (csak admin) – api/felhasznalok.js
+// Meghívás e-mailben: az admin e-mail címet és jogosultságot ad, a meghívott a linken (meghivo.html) maga választ nevet + jelszót
 let USERS = [];
 async function uapi(method, query, body) {
   const r = await fetch('/api/felhasznalok' + (query || ''), { method, headers: { 'Content-Type': 'application/json', 'x-admin-pass': pass }, body: body ? JSON.stringify(body) : undefined });
@@ -1255,46 +1261,73 @@ async function loadUsers() {
   try { USERS = await uapi('GET') || []; renderUsers(); }
   catch (e) { $('uList').innerHTML = `<li class="empty">${esc(e.message)}</li>`; }
 }
+function inviteMail(u, reset) {
+  const who = ME && ME.nev !== 'admin' ? ME.nev : 'a Total Team';
+  const subj = reset ? 'Total Team Raktár – új jelszó beállítása' : 'Meghívó – Total Team Raktár';
+  const body = reset
+    ? `Szia!\n\nEzen a linken új jelszót állíthatsz be a Total Team raktár felületéhez:\n${u.link}\n\nA link 7 napig érvényes.\n\nÜdv,\n${who}`
+    : `Szia!\n\nMeghívtalak a Total Team raktár belső felületére (${ROLE_NAME[u.szerep]} jogosultsággal).\n\nEzen a linken válassz magadnak felhasználónevet és jelszót:\n${u.link}\n\nA link 7 napig érvényes. Utána itt tudsz belépni: ${location.origin}/admin.html\n\nÜdv,\n${who}`;
+  return `mailto:${encodeURIComponent(u.email)}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+}
+function showInvite(u, reset) {
+  const box = $('invBox'), mail = inviteMail(u, reset);
+  box.innerHTML = `<b>${reset ? 'Jelszó-visszaállító link' : 'Meghívó'}: ${esc(u.email)}</b>
+    <span>Ha nem nyílt meg a levelező, másold ki a linket és küldd el neki (pl. üzenetben):</span>
+    <input type="text" readonly value="${esc(u.link)}" onclick="this.select()">
+    <div class="row"><a class="btn small primary" href="${esc(mail)}">Levél megnyitása</a><button class="btn small" type="button" id="invCopy">Link másolása</button><button class="link-btn" type="button" id="invClose">Bezárás</button></div>`;
+  box.hidden = false;
+  $('invCopy').onclick = async () => { try { await navigator.clipboard.writeText(u.link); toast('Link kimásolva'); } catch (e) { box.querySelector('input').select(); } };
+  $('invClose').onclick = () => { box.hidden = true; };
+  location.href = mail;
+}
 function renderUsers() {
   const opt = v => Object.entries(ROLE_NAME).map(([k, n]) => `<option value="${k}"${k === v ? ' selected' : ''}>${n}</option>`).join('');
   $('uList').innerHTML = `<li class="urow"><div class="un">admin<small>fő admin belépés (eredeti jelszó) – nem törölhető</small></div><span class="pill ok">Admin</span></li>` +
-    (USERS.length ? USERS.map(u => `<li class="urow ${u.aktiv ? '' : 'off'}" data-id="${esc(u.id)}">
-      <div class="un">${esc(u.nev)}<small>${u.aktiv ? 'aktív' : 'letiltva'} · felvéve ${huDate(u.created_at)}</small></div>
+    (USERS.length ? USERS.map(u => {
+      const invited = !u.regisztralt, exp = u.meghivo_lejar && new Date(u.meghivo_lejar) < new Date();
+      const st = !u.aktiv ? 'letiltva' : invited ? (exp ? 'a meghívó lejárt' : `meghívva, még nem regisztrált (link: ${huDate(u.meghivo_lejar)}-ig)`) : 'aktív';
+      return `<li class="urow ${u.aktiv ? '' : 'off'}" data-id="${esc(u.id)}">
+      <div class="un">${invited ? esc(u.email) : esc(u.nev)}<small>${invited ? '' : esc(u.email || '') + ' · '}${st}</small></div>
+      ${invited ? `<span class="pill inv">${exp ? 'Lejárt' : 'Meghívva'}</span>` : ''}
       <select data-u="szerep" aria-label="Jogosultság">${opt(u.szerep)}</select>
-      <div class="acts"><button class="link-btn" type="button" data-u="pw">Új jelszó</button>
+      <div class="acts">${u.email ? `<button class="link-btn" type="button" data-u="link">${invited ? 'Új meghívó' : 'Jelszó-visszaállítás'}</button>` : ''}
         <button class="link-btn" type="button" data-u="aktiv">${u.aktiv ? 'Letiltás' : 'Engedélyezés'}</button>
-        <button class="link-btn danger" type="button" data-u="del">Törlés</button></div></li>`).join('')
-    : '<li class="empty">Még nincs további felhasználó. Bal oldalt vehetsz fel.</li>');
+        <button class="link-btn danger" type="button" data-u="del">Törlés</button></div></li>`; }).join('')
+    : '<li class="empty">Még nincs meghívott felhasználó. Bal oldalt hívhatsz meg valakit az e-mail címével.</li>');
 }
 $('uForm').addEventListener('submit', async e => {
   e.preventDefault(); showErr($('uErr'));
   const f = e.target.elements, btn = e.target.querySelector('button[type=submit]');
+  if (!f.email.checkValidity() || !f.email.value.trim()) return showErr($('uErr'), 'Adj meg egy érvényes e-mail címet.');
   btn.disabled = true;
   try {
-    const u = await uapi('POST', '', { nev: f.nev.value.trim(), jelszo: f.jelszo.value, szerep: f.szerep.value });
-    USERS.push(u); USERS.sort((a, b) => a.nev.localeCompare(b.nev, 'hu')); renderUsers();
-    toast(`${u.nev} felvéve (${ROLE_NAME[u.szerep]})`); e.target.reset();
+    const u = await uapi('POST', '', { email: f.email.value.trim(), szerep: f.szerep.value });
+    USERS.push(u); renderUsers(); toast(`Meghívó elkészült: ${u.email}`);
+    f.email.value = ''; showInvite(u, false);
   } catch (err) { showErr($('uErr'), err.message); }
   finally { btn.disabled = false; }
 });
 $('uList').addEventListener('change', async e => {
   const s = e.target.closest('select[data-u="szerep"]'); if (!s) return;
   const id = s.closest('.urow').dataset.id, u = USERS.find(x => x.id === id);
-  try { Object.assign(u, await uapi('PATCH', '?id=' + encodeURIComponent(id), { szerep: s.value })); toast(`${u.nev}: ${ROLE_NAME[u.szerep]}`); }
+  try { Object.assign(u, await uapi('PATCH', '?id=' + encodeURIComponent(id), { szerep: s.value })); toast(`${u.regisztralt ? u.nev : u.email}: ${ROLE_NAME[u.szerep]}`); }
   catch (err) { toast('Hiba: ' + err.message); } renderUsers();
 });
 $('uList').addEventListener('click', async e => {
   const b = e.target.closest('button[data-u]'); if (!b) return;
   const id = b.closest('.urow').dataset.id, u = USERS.find(x => x.id === id); if (!u) return;
+  const name = u.regisztralt ? u.nev : u.email;
   try {
-    if (b.dataset.u === 'pw') {
-      const pw = prompt(`Új jelszó ${u.nev} számára (min. 6 karakter):`); if (!pw) return;
-      await uapi('PATCH', '?id=' + encodeURIComponent(id), { jelszo: pw }); toast(`${u.nev}: új jelszó beállítva`);
+    if (b.dataset.u === 'link') {
+      const reset = u.regisztralt;
+      if (reset && !confirm(`Jelszó-visszaállító linket küldesz ${name} részére? A régi jelszava addig működik, amíg újat nem állít be.`)) return;
+      const r = await uapi('PATCH', '?id=' + encodeURIComponent(id), { meghivo: true });
+      Object.assign(u, r); window.scrollTo(0, 0); showInvite(r, reset);
     } else if (b.dataset.u === 'aktiv') {
-      Object.assign(u, await uapi('PATCH', '?id=' + encodeURIComponent(id), { aktiv: !u.aktiv })); toast(`${u.nev}: ${u.aktiv ? 'engedélyezve' : 'letiltva'}`);
+      Object.assign(u, await uapi('PATCH', '?id=' + encodeURIComponent(id), { aktiv: !u.aktiv })); toast(`${name}: ${u.aktiv ? 'engedélyezve' : 'letiltva'}`);
     } else if (b.dataset.u === 'del') {
-      if (!confirm(`Törlöd ${u.nev} felhasználót?`)) return;
-      await uapi('DELETE', '?id=' + encodeURIComponent(id)); USERS = USERS.filter(x => x !== u); toast(`${u.nev} törölve`);
+      if (!confirm(`Törlöd ${name} felhasználót?`)) return;
+      await uapi('DELETE', '?id=' + encodeURIComponent(id)); USERS = USERS.filter(x => x !== u); toast(`${name} törölve`);
     }
   } catch (err) { toast('Hiba: ' + err.message); }
   renderUsers();

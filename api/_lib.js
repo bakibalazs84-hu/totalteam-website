@@ -82,4 +82,12 @@ async function auth(req) {
   return u;
 }
 
-module.exports = { passOk, sb, auth, can, ROLES, hashPw, verifyPw, signToken };
+// Meghívó link titka: csak a sha256-ja kerül az adatbázisba
+function newInvite(days = 7) {
+  const t = crypto.randomBytes(24).toString('base64url');
+  return { t, hash: inviteHash(t), lejar: new Date(Date.now() + days * 864e5).toISOString() };
+}
+const inviteHash = t => crypto.createHash('sha256').update('tt-invite|' + String(t)).digest('hex');
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+module.exports = { passOk, sb, auth, can, ROLES, hashPw, verifyPw, signToken, newInvite, inviteHash, EMAIL };

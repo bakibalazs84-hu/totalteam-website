@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Meghívó – Total Team Raktár</title>
+<link rel="icon" href="/favicon.ico"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Meghívó elfogadása / új jelszó: a meghívott maga választ nevet és jelszót (api/meghivo.js) */
+:root {
+  --bg: #f6f6f3; --surface: #ffffff; --border: #e3e2dc; --fg: #1b1a17; --fg-muted: #7d7b73;
+  --accent: #a8823f; --accent-bg: #f7f0e3; --pill-bg: #edece7; --on-accent: #ffffff;
+  --ok: #2e7d32; --ok-bg: #e7f3e8; --bad: #c62828; --bad-bg: #fbe9e9; --warn: #9a6a00; --warn-bg: #fdf3dc;
+  --overlay: rgba(20,19,16,.6); --shadow: 0 1px 6px rgba(0,0,0,.08); --shadow-lg: 0 8px 32px rgba(0,0,0,.14);
+  --radius: 6px; --font-display: 'Playfair Display', Georgia, serif; --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141412; --surface: #1d1c1a; --border: #2f2e2a; --fg: #f0efea; --fg-muted: #94928a;
+    --accent: #cfa968; --accent-bg: #2a2418; --pill-bg: #292824; --on-accent: #141412;
+    --ok: #81c784; --ok-bg: #1d2e1e; --bad: #ef9a9a; --bad-bg: #3a1f1f; --warn: #e8c46a; --warn-bg: #33290f;
+    --overlay: rgba(0,0,0,.72); --shadow: 0 1px 6px rgba(0,0,0,.3); --shadow-lg: 0 8px 32px rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141412; --surface: #1d1c1a; --border: #2f2e2a; --fg: #f0efea; --fg-muted: #94928a;
+  --accent: #cfa968; --accent-bg: #2a2418; --pill-bg: #292824; --on-accent: #141412;
+  --ok: #81c784; --ok-bg: #1d2e1e; --bad: #ef9a9a; --bad-bg: #3a1f1f; --warn: #e8c46a; --warn-bg: #33290f;
+  --overlay: rgba(0,0,0,.72); color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 26px 24px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow); }
+.logo { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+.logo img { height: 38px; width: auto; }
+h1 { font-family: var(--font-display); font-size: 24px; line-height: 1.2; }
+.muted { color: var(--fg-muted); }
+.role { display: inline-block; background: var(--accent-bg); color: var(--accent); font-weight: 600; font-size: 12px; padding: 2px 10px; border-radius: 20px; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--fg-muted); font-weight: 500; }
+input { height: 42px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); padding: 0 12px; font: inherit; font-size: 15px; color: var(--fg); }
+input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.btn { height: 44px; border-radius: var(--radius); border: 0; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 600; font-size: 15px; cursor: pointer; }
+.btn:disabled { opacity: .6; cursor: wait; }
+.err { background: var(--bad-bg); color: var(--bad); padding: 10px 12px; border-radius: var(--radius); font-size: 13px; }
+.ok { background: var(--ok-bg); color: var(--ok); padding: 10px 12px; border-radius: var(--radius); font-size: 13px; }
+.hint { font-size: 12px; color: var(--fg-muted); }
+form { display: flex; flex-direction: column; gap: 14px; }
+a { color: var(--accent); }
+.btn { width: 100%; }
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="logo"><img src="/img/total-team-logo-clean.png" alt="Total Team" width="49" height="38">Raktár</div>
+  <div id="loading" class="muted">Meghívó ellenőrzése…</div>
+  <div class="err" id="bad" hidden></div>
+  <form id="f" hidden novalidate>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <h1 id="title">Üdv a Total Team raktár felületén!</h1>
+      <p class="muted" id="intro"></p>
+      <div><span class="role" id="role"></span></div>
+    </div>
+    <label>Felhasználónév (ezzel lépsz be)<input name="nev" required minlength="2" maxlength="60" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+    <label>Jelszó (legalább 8 karakter)<input name="jelszo" type="password" required minlength="8" autocomplete="new-password"></label>
+    <label>Jelszó még egyszer<input name="jelszo2" type="password" required minlength="8" autocomplete="new-password"></label>
+    <div class="err" id="err" hidden></div>
+    <button class="btn" type="submit" id="go">Regisztráció és belépés</button>
+    <p class="hint">Később itt léphetsz be, a felhasználóneveddel vagy az e-mail címeddel: <a href="/admin.html">belépés</a>. Érdemes könyvjelzőzni.</p>
+  </form>
+</main>
+<script>
+const ROLE = { admin: 'Admin – teljes hozzáférés', raktaros: 'Raktáros – kivitel, visszavétel, foglaltság', ajanlat: 'Ajánlatkezelő – bejövő bérlési igények' };
+const $ = id => document.getElementById(id), f = $('f');
+const t = location.hash.slice(1);
+const show = (el, msg) => { el.textContent = msg || ''; el.hidden = !msg; };
+(async () => {
+  try {
+    const r = await fetch('/api/meghivo?t=' + encodeURIComponent(t)); const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Hiba');
+    $('intro').textContent = d.regisztralt ? `Új jelszót állíthatsz be a(z) ${d.email} fiókhoz.` : `Meghívást kaptál a(z) ${d.email} címre. Válassz felhasználónevet és jelszót.`;
+    if (d.regisztralt) { $('title').textContent = 'Új jelszó beállítása'; $('go').textContent = 'Mentés és belépés'; }
+    $('role').textContent = ROLE[d.szerep] || d.szerep;
+    f.elements.nev.value = d.nev || (d.email || '').split('@')[0].replace(/[^\p{L}\p{N}._-]/gu, '');
+    $('loading').hidden = true; f.hidden = false; (d.nev ? f.elements.jelszo : f.elements.nev).focus();
+  } catch (e) { $('loading').hidden = true; show($('bad'), e.message); }
+})();
+f.addEventListener('submit', async e => {
+  e.preventDefault(); show($('err'));
+  const nev = f.elements.nev.value.trim(), jelszo = f.elements.jelszo.value;
+  if (nev.length < 2) return show($('err'), 'Adj meg egy felhasználónevet (legalább 2 karakter).');
+  if (jelszo.length < 8) return show($('err'), 'A jelszó legalább 8 karakter legyen.');
+  if (jelszo !== f.elements.jelszo2.value) return show($('err'), 'A két jelszó nem egyezik.');
+  $('go').disabled = true;
+  try {
+    const r = await fetch('/api/meghivo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t, nev, jelszo }) });
+    const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Hiba');
+    try { sessionStorage.setItem('tt_admin', d.token); localStorage.setItem('tt_unev', d.user.nev); } catch (x) {}
+    history.replaceState(null, '', location.pathname);       // a link titka ne maradjon a címsorban
+    location.href = '/admin.html';
+  } catch (err) { show($('err'), err.message); $('go').disabled = false; }
+});
+</script>
+</body>
+</html>
