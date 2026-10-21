@@ -283,6 +283,7 @@ html, body { overflow-x: hidden; }
 .rolehelp b { display: block; color: var(--fg); font-size: 13px; }
 @media (max-width: 760px) { .users-grid { grid-template-columns: minmax(0, 1fr); } }
 /* Jogosultság szerint elrejtett vezérlők (a szerver is ellenőrzi) */
+body[data-role="raktaros"] [data-bact="del"],
 body[data-role="ajanlat"] #scanOpen,
 body[data-role="ajanlat"] [data-act]:not([data-act="print"]),
 body[data-role="ajanlat"] #flist [data-f],
@@ -384,7 +385,7 @@ body[data-role="ajanlat"] [data-bact="kivitel"] { display: none !important; }
           <h2>Meghívás</h2>
           <label class="f">E-mail cím<input type="email" name="email" required maxlength="200" autocomplete="off" placeholder="nev@pelda.hu"></label>
           <label class="f">Jogosultság<select name="szerep" required>
-            <option value="raktaros">Raktáros – kivitel, visszavétel, foglaltság</option>
+            <option value="raktaros">Raktáros – kivitel, visszavétel, foglaltság, bérlési igények</option>
             <option value="ajanlat">Ajánlatkezelő – bejövő bérlési igények</option>
             <option value="admin">Admin – minden, felhasználók kezelése is</option></select></label>
           <div class="err" id="uErr" hidden></div>
@@ -395,7 +396,7 @@ body[data-role="ajanlat"] [data-bact="kivitel"] { display: none !important; }
         <div class="panel" style="padding:4px 16px"><ul class="ulist" id="uList"><li class="empty">Betöltés…</li></ul></div>
       </div>
       <div class="panel rolehelp">
-        <div><b>Raktáros</b>Új kivitel, kint lévők, visszavétel, beolvasás, foglaltság. A bejövő bérlési igényeket nem látja.</div>
+        <div><b>Raktáros</b>Új kivitel, kint lévők, visszavétel, beolvasás, foglaltság. A bejövő bérlési igényeket is látja és kezeli (törölni nem tudja).</div>
         <div><b>Ajánlatkezelő</b>Bejövő bérlési igények kezelése (státusz, nyomtatás). A kiviteleket és a foglaltságot csak nézi.</div>
         <div><b>Admin</b>Mindent lát és kezel, felhasználókat is meghívhat. A fő „admin” belépés (eredeti jelszó) mindig megmarad.</div>
       </div>
@@ -457,7 +458,7 @@ const thumb = p => `<div class="thumb${p && p.imgs && p.imgs[0] ? ' zoom" data-z
 // pass = munkamenet token (api/login.js); régi mentett admin jelszónál első induláskor tokenre cserélődik
 let pass = '', ME = null;
 try { pass = sessionStorage.getItem('tt_admin') || ''; } catch (e) {}
-const PERMS = { admin: ['kivitel:write', 'ajanlat', 'users'], raktaros: ['kivitel:write'], ajanlat: ['ajanlat'] };
+const PERMS = { admin: ['kivitel:write', 'ajanlat', 'ajanlat:delete', 'users'], raktaros: ['kivitel:write', 'ajanlat'], ajanlat: ['ajanlat', 'ajanlat:delete'] };
 const can = p => !!ME && (PERMS[ME.szerep] || []).includes(p);
 const ROLE_NAME = { admin: 'Admin', raktaros: 'Raktáros', ajanlat: 'Ajánlatkezelő' };
 let PRODUCTS = [], byId = new Map(), rows = [];

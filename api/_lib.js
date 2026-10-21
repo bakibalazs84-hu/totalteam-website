@@ -29,11 +29,11 @@ async function sb(path, opts = {}) {
 }
 
 // ── Felhasználók és jogosultságok
-// Szerepek: admin (minden + felhasználók kezelése), raktaros (kivitel, visszavétel, foglaltság), ajanlat (bejövő bérlési igények)
+// Szerepek: admin (minden + felhasználók kezelése), raktaros (kivitel, visszavétel, foglaltság + bejövő igények, törlés nélkül), ajanlat (bejövő bérlési igények)
 const PERMS = {
-  admin:    ['kivitel:read', 'kivitel:write', 'fog:read', 'fog:write', 'ajanlat:read', 'ajanlat:write', 'users'],
-  raktaros: ['kivitel:read', 'kivitel:write', 'fog:read', 'fog:write'],
-  ajanlat:  ['kivitel:read', 'fog:read', 'ajanlat:read', 'ajanlat:write'],
+  admin:    ['kivitel:read', 'kivitel:write', 'fog:read', 'fog:write', 'ajanlat:read', 'ajanlat:write', 'ajanlat:delete', 'users'],
+  raktaros: ['kivitel:read', 'kivitel:write', 'fog:read', 'fog:write', 'ajanlat:read', 'ajanlat:write'],
+  ajanlat:  ['kivitel:read', 'fog:read', 'ajanlat:read', 'ajanlat:write', 'ajanlat:delete'],
 };
 const ROLES = Object.keys(PERMS);
 const can = (user, perm) => !!user && (PERMS[user.szerep] || []).includes(perm);

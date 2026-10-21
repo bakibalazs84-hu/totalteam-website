@@ -44,7 +44,7 @@ module.exports = async (req, res) => {
     if (!process.env.ADMIN_PASSWORD) return res.status(500).json({ error: 'Az ADMIN_PASSWORD nincs beállítva a Vercelen.' });
     const user = await auth(req);
     if (!user) return res.status(401).json({ error: 'Lejárt vagy hibás belépés.' });
-    if (!can(user, req.method === 'GET' ? 'ajanlat:read' : 'ajanlat:write')) return res.status(403).json({ error: 'Ehhez nincs jogosultságod.' });
+    if (!can(user, req.method === 'GET' ? 'ajanlat:read' : req.method === 'DELETE' ? 'ajanlat:delete' : 'ajanlat:write')) return res.status(403).json({ error: 'Ehhez nincs jogosultságod.' });
 
     if (req.method === 'GET') return res.status(200).json(await sb(`${TABLE}?select=*&order=created_at.desc&limit=500`, { method: 'GET' }));
     if (req.method === 'PATCH') {

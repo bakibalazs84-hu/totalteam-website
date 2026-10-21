@@ -75,7 +75,7 @@ a { color: var(--accent); }
   </form>
 </main>
 <script>
-const ROLE = { admin: 'Admin – teljes hozzáférés', raktaros: 'Raktáros – kivitel, visszavétel, foglaltság', ajanlat: 'Ajánlatkezelő – bejövő bérlési igények' };
+const ROLE = { admin: 'Admin – teljes hozzáférés', raktaros: 'Raktáros – kivitel, visszavétel, foglaltság, bérlési igények', ajanlat: 'Ajánlatkezelő – bejövő bérlési igények' };
 const $ = id => document.getElementById(id), f = $('f');
 const t = location.hash.slice(1);
 const show = (el, msg) => { el.textContent = msg || ''; el.hidden = !msg; };
